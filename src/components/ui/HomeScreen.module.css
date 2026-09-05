@@ -1,0 +1,116 @@
+﻿.home {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  overflow: hidden;
+}
+
+.pitch {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.circle {
+  width: min(80vw, 480px);
+  height: min(80vw, 480px);
+}
+
+.circle circle,
+.circle line {
+  fill: none;
+  stroke: var(--line-020);
+  stroke-width: 1;
+}
+
+.circle circle {
+  stroke-dasharray: 452;
+  stroke-dashoffset: 452;
+  animation: draw 1.6s ease-out forwards;
+}
+
+.circle line {
+  stroke-dasharray: 196;
+  stroke-dashoffset: 196;
+  animation: drawLine 0.6s ease-out 1.4s forwards;
+}
+
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes drawLine {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circle circle,
+  .circle line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  max-width: 34rem;
+}
+
+.kicker {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--chalk-300);
+  margin: 0 0 0.75rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(3rem, 12vw, 5.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  margin: 0 0 1.25rem;
+  color: var(--chalk-050);
+}
+
+.lead {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--chalk-300);
+  max-width: 32ch;
+  margin: 0 0 2rem;
+}
+
+.cta {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--pitch-950);
+  background: var(--signal-amber);
+  padding: 0.9rem 1.75rem;
+  text-decoration: none;
+  clip-path: polygon(0 0, 100% 0, 96% 100%, 0 100%);
+  transition: transform 0.15s ease;
+}
+
+.cta:hover,
+.cta:focus-visible {
+  transform: translateY(-2px);
+  outline: 2px solid var(--chalk-050);
+  outline-offset: 3px;
+}
+
+.note {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--chalk-300);
+  max-width: 36ch;
+}

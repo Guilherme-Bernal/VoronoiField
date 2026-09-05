@@ -1,0 +1,76 @@
+﻿.frame {
+  position: absolute;
+  inset: 8% 10%;
+  pointer-events: none;
+}
+
+.corner {
+  position: absolute;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 2px solid var(--signal-amber);
+}
+
+.cornerTl {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+
+.cornerTr {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+}
+
+.cornerBl {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+}
+
+.cornerBr {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
+
+.sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--signal-amber);
+  opacity: 0.8;
+  animation: sweep 2.2s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0% { top: 0; }
+  50% { top: 100%; }
+  100% { top: 0; }
+}
+
+.label {
+  position: absolute;
+  bottom: -2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--chalk-050);
+  background: rgba(8, 25, 18, 0.7);
+  padding: 0.4rem 0.9rem;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep {
+    animation: none;
+    top: 50%;
+  }
+}

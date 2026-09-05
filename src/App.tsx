@@ -1,11 +1,15 @@
-﻿import "./App.css";
+﻿import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { HomeScreen } from "./components/ui/HomeScreen";
+import { ARExperience } from "./components/ar/ARExperience";
 
 function App() {
   return (
-    <div className="app">
-      <h1>VoronoiField</h1>
-      <p>AR de Analise Tatica em Tempo Real (futebol)</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomeScreen />} />
+        <Route path="/ar" element={<ARExperience />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

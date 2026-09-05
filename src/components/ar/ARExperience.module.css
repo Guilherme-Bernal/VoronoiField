@@ -1,0 +1,12 @@
+﻿.stage {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--pitch-950);
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+}
