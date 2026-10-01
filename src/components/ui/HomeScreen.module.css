@@ -114,3 +114,24 @@
   color: var(--chalk-300);
   max-width: 36ch;
 }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+}
+
+.ctaGhost {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--chalk-050);
+  text-decoration: none;
+  padding: 0.9rem 0;
+  border-bottom: 2px solid var(--line-020);
+}
+
+.ctaGhost:hover,
+.ctaGhost:focus-visible {
+  border-bottom-color: var(--signal-amber);
+}

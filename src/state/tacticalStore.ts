@@ -1,5 +1,6 @@
 ﻿import { create } from "zustand";
 import { demoPlayers, type Player } from "../tactics/engine";
+import { createMatch, type FormationName } from "../tactics/formations";
 
 interface TacticalState {
   players: Player[];
@@ -14,6 +15,7 @@ interface TacticalState {
   togglePasses: () => void;
   setTargetFound: (found: boolean) => void;
   resetFormation: () => void;
+  loadMatch: (a: FormationName, b: FormationName) => void;
 }
 
 export const useTacticalStore = create<TacticalState>((set) => ({
@@ -40,4 +42,5 @@ export const useTacticalStore = create<TacticalState>((set) => ({
   togglePasses: () => set((state) => ({ showPasses: !state.showPasses })),
   setTargetFound: (found) => set({ targetFound: found }),
   resetFormation: () => set({ players: demoPlayers() }),
+  loadMatch: (a, b) => set({ players: createMatch(a, b) }),
 }));

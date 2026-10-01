@@ -20,13 +20,18 @@ export function HomeScreen() {
           exatamente como no replay da transmissao.
         </p>
 
-        <Link to="/ar" className={styles.cta}>
-          Iniciar leitura do campo
-        </Link>
+        <div className={styles.actions}>
+          <Link to="/sim" className={styles.cta}>
+            Abrir simulador
+          </Link>
+          <Link to="/ar" className={styles.ctaGhost}>
+            Iniciar leitura do campo (AR)
+          </Link>
+        </div>
 
         <p className={styles.note}>
-          Funciona direto no navegador do celular, sem instalar nada.
-          Precisa de um marcador impresso — veja o guia no repositorio.
+          O simulador funciona em qualquer navegador, sem camera. O modo AR
+          roda no celular e precisa de um marcador impresso.
         </p>
       </div>
     </main>

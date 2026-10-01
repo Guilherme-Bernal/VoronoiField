@@ -1,0 +1,265 @@
+﻿.page {
+  min-height: 100dvh;
+  padding: 1rem 1.25rem 2rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.back,
+.arLink {
+  font-size: 0.9rem;
+  color: var(--chalk-300);
+  text-decoration: none;
+  padding: 0.4rem 0;
+}
+
+.arLink {
+  color: var(--signal-amber);
+}
+
+.back:hover,
+.arLink:hover {
+  text-decoration: underline;
+}
+
+.layout {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 60rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}
+
+.boardWrap {
+  border: 1px solid var(--line-020);
+  background: var(--pitch-850);
+}
+
+.board {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  user-select: none;
+}
+
+.grass {
+  fill: #0f3322;
+}
+
+.markings rect:not(.grass),
+.markings line,
+.markings circle {
+  fill: none;
+  stroke: rgba(244, 247, 243, 0.55);
+  stroke-width: 0.3;
+}
+
+.markings .spot {
+  fill: rgba(244, 247, 243, 0.7);
+}
+
+.zoneA {
+  fill: var(--team-a);
+  fill-opacity: 0.22;
+  stroke: var(--team-a);
+  stroke-opacity: 0.5;
+  stroke-width: 0.2;
+  pointer-events: none;
+}
+
+.zoneB {
+  fill: var(--team-b);
+  fill-opacity: 0.22;
+  stroke: var(--team-b);
+  stroke-opacity: 0.5;
+  stroke-width: 0.2;
+  pointer-events: none;
+}
+
+.passOpen {
+  stroke: var(--signal-amber);
+  stroke-width: 0.35;
+  stroke-opacity: 0.9;
+  pointer-events: none;
+}
+
+.passBlocked {
+  stroke: #9aa0a6;
+  stroke-width: 0.25;
+  stroke-opacity: 0.35;
+  stroke-dasharray: 0.8 0.8;
+  pointer-events: none;
+}
+
+.player {
+  cursor: grab;
+}
+
+.playerDragging {
+  cursor: grabbing;
+}
+
+.tokenA,
+.tokenB {
+  stroke: var(--chalk-050);
+  stroke-width: 0.35;
+}
+
+.tokenA {
+  fill: var(--team-a);
+}
+
+.tokenB {
+  fill: var(--team-b);
+}
+
+.playerDragging circle {
+  stroke: var(--signal-amber);
+  stroke-width: 0.6;
+}
+
+.tokenLabel {
+  fill: var(--chalk-050);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 2.2px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.block {
+  border: 1px solid var(--line-020);
+  padding: 1rem;
+  background: rgba(244, 247, 243, 0.03);
+}
+
+.blockTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+.meter {
+  display: flex;
+  height: 2rem;
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.meterA,
+.meterB {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.15s ease;
+  min-width: 2.5rem;
+}
+
+.meterA {
+  background: var(--team-a);
+}
+
+.meterB {
+  background: var(--team-b);
+}
+
+.hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--chalk-300);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  margin-bottom: 0.6rem;
+}
+
+.field select {
+  font: inherit;
+  color: var(--chalk-050);
+  background: var(--pitch-950);
+  border: 1px solid var(--line-020);
+  padding: 0.4rem 0.6rem;
+  grid-column: 3;
+}
+
+.field select option {
+  background: var(--pitch-950);
+}
+
+.swatchA,
+.swatchB {
+  width: 0.75rem;
+  height: 0.75rem;
+  display: inline-block;
+}
+
+.swatchA {
+  background: var(--team-a);
+}
+
+.swatchB {
+  background: var(--team-b);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.toggle,
+.reset {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--chalk-050);
+  background: rgba(244, 247, 243, 0.08);
+  border: 1px solid var(--line-020);
+  padding: 0.55rem 0.9rem;
+}
+
+.toggleActive {
+  background: var(--signal-amber);
+  color: var(--pitch-950);
+  border-color: var(--signal-amber);
+}
+
+.reset {
+  color: var(--chalk-300);
+}

@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useMindAR } from "../../lib/ar/useMindAR";
 import {
@@ -6,15 +6,39 @@ import {
   updateTacticalGroup,
 } from "../../lib/ar/tacticalScene";
 import { useTacticalStore } from "../../state/tacticalStore";
+import { Link } from "react-router-dom";
+import { useCameras } from "../../lib/ar/useCameras";
+import { CameraPicker } from "./CameraPicker";
 import { ScanFrame } from "./ScanFrame";
 import { HUD } from "../ui/HUD";
 import styles from "./ARExperience.module.css";
 
 const IMAGE_TARGET_SRC = "/markers/targets.mind";
 
+const ERROR_COPY = {
+  "marker-missing": {
+    title: "Marcador não encontrado",
+    text: "Falta o arquivo public/markers/targets.mind.",
+  },
+  "script-missing": {
+    title: "Biblioteca de AR não carregou",
+    text: "O script do MindAR (CDN) não foi carregado. Verifique a conexão e recarregue.",
+  },
+  camera: {
+    title: "Não foi possível abrir a câmera",
+    text: "Permita o acesso à câmera. No celular, é preciso abrir o site via HTTPS.",
+  },
+} as const;
+
 export function ARExperience() {
-  const { containerRef, mindARRef, anchorRef, targetFound, ready } =
-    useMindAR(IMAGE_TARGET_SRC);
+  const { cameras, deviceId, setDeviceId, refresh } = useCameras();
+  const { containerRef, mindARRef, anchorRef, targetFound, ready, error } =
+    useMindAR(IMAGE_TARGET_SRC, deviceId);
+
+  // Os nomes das cameras so ficam disponiveis depois da permissao.
+  useEffect(() => {
+    if (ready || error) void refresh();
+  }, [ready, error, refresh]);
 
   const tacticalRef = useRef(createTacticalGroup());
   const draggingRef = useRef<string | null>(null);
@@ -121,8 +145,20 @@ export function ARExperience() {
   return (
     <div className={styles.stage}>
       <div ref={containerRef} className={styles.viewport} />
+      {error && (
+        <div className={styles.errorBox} role="alert">
+          <h2 className={styles.errorTitle}>{ERROR_COPY[error].title}</h2>
+          <p className={styles.errorText}>{ERROR_COPY[error].text}</p>
+          <Link to="/sim" className={styles.errorLink}>
+            Abrir o simulador sem câmera
+          </Link>
+        </div>
+      )}
+
+      <CameraPicker cameras={cameras} value={deviceId} onChange={setDeviceId} />
       <ScanFrame visible={ready && !targetFound} />
       <HUD />
     </div>
   );
 }
+

@@ -38,7 +38,8 @@ export function computeVoronoiZones(
 
 export function computePassingLines(
   players: Player[],
-  interceptRadius = 0.06
+  interceptRadius = 0.06,
+  maxDistance = Infinity
 ): PassingLine[] {
   const lines: PassingLine[] = [];
 
@@ -47,6 +48,7 @@ export function computePassingLines(
       const a = players[i];
       const b = players[j];
       if (a.team !== b.team) continue;
+      if (Math.hypot(a.x - b.x, a.y - b.y) > maxDistance) continue;
 
       const opponents = players.filter((p) => p.team !== a.team);
       const blocked = opponents.some((o) =>
@@ -92,4 +94,31 @@ export function demoPlayers(): Player[] {
     { id: "B3", team: "B", x: 0.65, y: 0.75 },
     { id: "B4", team: "B", x: 0.5, y: 0.15 },
   ];
+}
+
+
+export function polygonArea(polygon: number[][]): number {
+  let sum = 0;
+  for (let i = 0; i < polygon.length; i++) {
+    const [x1, y1] = polygon[i];
+    const [x2, y2] = polygon[(i + 1) % polygon.length];
+    sum += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(sum) / 2;
+}
+
+export interface TeamControl {
+  A: number;
+  B: number;
+}
+
+/** Fracao (0..1) do campo dominada por cada time, somando as zonas de Voronoi. */
+export function computeTeamControl(zones: VoronoiZone[]): TeamControl {
+  const totals = { A: 0, B: 0 };
+  zones.forEach((zone) => {
+    totals[zone.team] += polygonArea(zone.polygon);
+  });
+  const all = totals.A + totals.B;
+  if (all === 0) return { A: 0.5, B: 0.5 };
+  return { A: totals.A / all, B: totals.B / all };
 }
