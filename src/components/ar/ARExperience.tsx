@@ -13,6 +13,7 @@ import { readSharedTactic } from "../../tactics/share";
 import { useCameras } from "../../lib/ar/useCameras";
 import { CameraPicker } from "./CameraPicker";
 import { ScanFrame } from "./ScanFrame";
+import { ARHint } from "./ARHint";
 import { HUD } from "../ui/HUD";
 import styles from "./ARExperience.module.css";
 
@@ -91,6 +92,8 @@ export function ARExperience() {
       labels: true,
       ballCarrierId,
       showOffside,
+      // Com 22 jogadores, so os passes curtos (alivia o celular).
+      maxPassDistance: players.length > 8 ? 0.3 : undefined,
     });
   }, [players, showZones, showPasses, draggingId, ballCarrierId, showOffside]);
 
@@ -193,6 +196,7 @@ export function ARExperience() {
 
       <CameraPicker cameras={cameras} value={deviceId} onChange={setDeviceId} />
       <ScanFrame visible={ready && !targetFound} />
+      <ARHint />
       <HUD />
     </div>
   );

@@ -1,0 +1,56 @@
+.wrap {
+  position: relative;
+  width: 100%;
+  height: clamp(22rem, 58vw, 38rem);
+  background: #06120d;
+  overflow: hidden;
+}
+
+.host {
+  position: absolute;
+  inset: 0;
+}
+
+.cameras {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cam {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--chalk-050);
+  background: rgba(8, 25, 18, 0.72);
+  border: 1px solid var(--line-020);
+  padding: 0.4rem 0.7rem;
+  backdrop-filter: blur(4px);
+}
+
+.camActive {
+  background: var(--signal-amber);
+  border-color: var(--signal-amber);
+  color: var(--pitch-950);
+}
+
+.tip {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.6rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--chalk-300);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.fallback {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--chalk-300);
+}

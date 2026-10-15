@@ -1,0 +1,36 @@
+.card {
+  position: absolute;
+  left: 50%;
+  bottom: 6rem;
+  transform: translateX(-50%);
+  width: min(22rem, calc(100% - 2rem));
+  padding: 1rem 1.1rem;
+  background: rgba(8, 25, 18, 0.92);
+  border: 1px solid var(--line-020);
+  z-index: 5;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem;
+}
+
+.list {
+  margin: 0 0 0.9rem;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--chalk-300);
+}
+
+.list a {
+  color: var(--chalk-050);
+}
+
+.button {
+  font-weight: 600;
+  color: var(--pitch-950);
+  background: var(--signal-amber);
+  padding: 0.55rem 1.2rem;
+}

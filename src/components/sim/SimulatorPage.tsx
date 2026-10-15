@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { copyText } from "../../lib/clipboard";
+import { Stadium3D } from "../three/Stadium3D";
 import { analyzeTactic } from "../../tactics/analysis";
 import { buildShareUrl, encodeTactic, readSharedTactic } from "../../tactics/share";
 import { computePassingLines, computeVoronoiZones } from "../../tactics/engine";
@@ -44,6 +45,7 @@ export function SimulatorPage() {
   const [formationB, setFormationB] = useState<FormationName>("4-3-3");
   const [shared, setShared] = useState(() => readSharedTactic(search));
   const [copied, setCopied] = useState(false);
+  const [view, setView] = useState<"2d" | "3d">("2d");
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Uma tatica vinda de link (?t=...) vale ate o usuario trocar a formacao.
@@ -122,6 +124,19 @@ export function SimulatorPage() {
           ← Início
         </Link>
         <h1 className={styles.title}>Simulador tático</h1>
+        <div className={styles.viewSwitch} role="group" aria-label="Tipo de vista">
+          {(["2d", "3d"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`${styles.viewButton} ${view === mode ? styles.viewActive : ""}`}
+              aria-pressed={view === mode}
+              onClick={() => setView(mode)}
+            >
+              {mode === "2d" ? "2D" : "3D"}
+            </button>
+          ))}
+        </div>
         <Link
           to={`/ar?t=${encodeTactic(players, ballCarrierId, steps)}`}
           className={styles.arLink}
@@ -132,6 +147,9 @@ export function SimulatorPage() {
 
       <div className={styles.layout}>
         <div className={styles.boardWrap}>
+          {view === "3d" ? (
+            <Stadium3D />
+          ) : (
           <svg
             ref={svgRef}
             className={styles.board}
@@ -236,6 +254,7 @@ export function SimulatorPage() {
               />
             )}
           </svg>
+          )}
         </div>
 
         <aside className={styles.panel}>

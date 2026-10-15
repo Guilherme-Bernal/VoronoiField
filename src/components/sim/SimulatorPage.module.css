@@ -7,6 +7,7 @@
 
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -41,7 +42,7 @@
 .layout {
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 @media (min-width: 60rem) {
@@ -336,4 +337,29 @@
 .toggle:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.viewSwitch {
+  display: flex;
+  border: 1px solid var(--line-020);
+}
+
+.viewButton {
+  min-width: 3rem;
+  padding: 0.4rem 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--chalk-300);
+  background: transparent;
+}
+
+.viewActive {
+  color: var(--pitch-950);
+  background: var(--signal-amber);
+}
+
+.boardWrap,
+.panel {
+  min-width: 0;
 }

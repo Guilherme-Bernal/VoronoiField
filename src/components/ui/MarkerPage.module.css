@@ -1,0 +1,80 @@
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.25rem 1.5rem;
+  gap: 1rem;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.link {
+  color: var(--chalk-300);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.print {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--pitch-950);
+  background: var(--signal-amber);
+  padding: 0.55rem 1.1rem;
+}
+
+.sheet {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  padding: 1rem;
+  min-height: 0;
+}
+
+.marker {
+  max-width: 100%;
+  max-height: 72dvh;
+  object-fit: contain;
+}
+
+.help {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--chalk-300);
+  max-width: 44rem;
+}
+
+@media print {
+  .bar,
+  .help {
+    display: none;
+  }
+
+  .page {
+    padding: 0;
+  }
+
+  .sheet {
+    padding: 0;
+  }
+
+  .marker {
+    max-height: 100vh;
+  }
+}

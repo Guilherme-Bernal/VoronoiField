@@ -31,6 +31,16 @@ export interface TacticalGroupOptions {
   /** Portador da bola: habilita bola, melhor passe e impedimento. */
   ballCarrierId?: string | null;
   showOffside?: boolean;
+  /** Proporcao do campo (padrao 1). O simulador 3D usa 105/68. */
+  aspect?: number;
+  /** Desenha so passes mais curtos que isto (0..1); alivia o celular com 22 jogadores. */
+  maxPassDistance?: number;
+  /** Escala dos peoes (1 no AR; menor no campo 3D de tamanho real). */
+  pawnScale?: number;
+  /** Escala da altura das zonas e dos arcos de passe. */
+  heightScale?: number;
+  /** Opacidade das zonas (padrao 0.26). */
+  zoneOpacity?: number;
 }
 
 interface PlayerVisual {
@@ -57,6 +67,8 @@ interface SceneState {
   players: Player[];
   options: TacticalGroupOptions;
   lastTime: number | null;
+  lastRebuild: number;
+  pendingRebuild: boolean;
   revealStart: number | null;
   pulses: Pulse[];
   ball: THREE.Mesh;
@@ -102,8 +114,13 @@ function clearGroup(group: THREE.Group) {
   }
 }
 
+/** Proporcao largura/altura do campo (1 = quadrado do marcador; 105/68 = campo real). */
+let aspect = 1;
+let pawnScale = 1;
+let heightScale = 1;
+
 function toWorld(x: number, y: number): [number, number] {
-  return [x - 0.5, 0.5 - y];
+  return [(x - 0.5) * aspect, 0.5 - y];
 }
 
 function clamp01(value: number) {
@@ -212,6 +229,8 @@ export function createTacticalGroup(): TacticalGroup {
     players: [],
     options: { showZones: true, showPasses: true },
     lastTime: null,
+    lastRebuild: 0,
+    pendingRebuild: false,
     revealStart: null,
     pulses: [],
     ball,
@@ -286,9 +305,11 @@ function createVisual(tactical: TacticalGroup, player: Player): PlayerVisual {
   pawn.rotation.x = Math.PI / 2;
   const material = s.teamMaterials[player.team];
   const body = new THREE.Mesh(s.bodyGeometry, material);
+  body.castShadow = true;
   body.position.y = 0.035;
   body.userData.playerId = player.id;
   const head = new THREE.Mesh(s.headGeometry, material);
+  head.castShadow = true;
   head.position.y = 0.088;
   head.userData.playerId = player.id;
   pawn.add(body, head);
@@ -341,6 +362,7 @@ function removeVisual(visual: PlayerVisual) {
 function placeVisual(visual: PlayerVisual) {
   const [wx, wy] = toWorld(visual.display.x, visual.display.y);
   visual.group.position.set(wx, wy, 0);
+  visual.group.scale.setScalar(pawnScale);
 
   const z = visual.lift * 0.035 + (1 - visual.drop) * 0.3;
   visual.pawn.position.z = z;
@@ -420,7 +442,7 @@ function rebuildOverlays(tactical: TacticalGroup) {
         return new THREE.Vector2(wx, wy);
       });
       // Quanto maior a area dominada, mais alto o prisma.
-      const height = 0.012 + 0.04 * (areas[index] / maxArea);
+      const height = (0.012 + 0.04 * (areas[index] / maxArea)) * heightScale;
       const color = TEAM_COLOR[zone.team];
 
       const mesh = new THREE.Mesh(
@@ -433,7 +455,7 @@ function rebuildOverlays(tactical: TacticalGroup) {
           emissive: color,
           emissiveIntensity: 0.25,
           transparent: true,
-          opacity: 0.26,
+          opacity: s.options.zoneOpacity ?? 0.26,
           side: THREE.DoubleSide,
           depthWrite: false,
           roughness: 0.8,
@@ -458,7 +480,7 @@ function rebuildOverlays(tactical: TacticalGroup) {
 
   if (s.options.showPasses) {
     const byId = new Map(current.map((p) => [p.id, p]));
-    computePassingLines(current).forEach((line, index) => {
+    computePassingLines(current, 0.06, s.options.maxPassDistance ?? Infinity).forEach((line, index) => {
       const from = byId.get(line.from);
       const to = byId.get(line.to);
       if (!from || !to) return;
@@ -471,7 +493,7 @@ function rebuildOverlays(tactical: TacticalGroup) {
         new THREE.Vector3(
           (fx + tx) / 2,
           (fy + ty) / 2,
-          baseZ + Math.min(dist, 0.6) * 0.5
+          baseZ + Math.min(dist, 0.6) * 0.5 * heightScale
         ),
         new THREE.Vector3(tx, ty, baseZ)
       );
@@ -525,7 +547,7 @@ function rebuildOverlays(tactical: TacticalGroup) {
       const dist = Math.hypot(tx - fx, ty - fy);
       const curve = new THREE.QuadraticBezierCurve3(
         new THREE.Vector3(fx, fy, 0.035),
-        new THREE.Vector3((fx + tx) / 2, (fy + ty) / 2, 0.035 + Math.min(dist, 0.6) * 0.6),
+        new THREE.Vector3((fx + tx) / 2, (fy + ty) / 2, 0.035 + Math.min(dist, 0.6) * 0.6 * heightScale),
         new THREE.Vector3(tx, ty, 0.035)
       );
       linesGroup.add(
@@ -608,6 +630,11 @@ export function updateTacticalGroup(
   options: TacticalGroupOptions
 ) {
   tactical.state.options = options;
+  aspect = options.aspect ?? 1;
+  pawnScale = options.pawnScale ?? 1;
+  heightScale = options.heightScale ?? 1;
+  getGroup(tactical, "ground").scale.x = aspect;
+  getGroup(tactical, "border").scale.x = aspect;
   syncPlayers(tactical, players);
   tactical.state.visuals.forEach(placeVisual);
   rebuildOverlays(tactical);
@@ -627,6 +654,9 @@ export function tickTacticalGroup(
   now: number = performance.now()
 ) {
   const s = tactical.state;
+  aspect = s.options.aspect ?? 1;
+  pawnScale = s.options.pawnScale ?? 1;
+  heightScale = s.options.heightScale ?? 1;
   const dt =
     s.lastTime === null ? 0.016 : Math.min(0.05, (now - s.lastTime) / 1000);
   s.lastTime = now;
@@ -694,7 +724,20 @@ export function tickTacticalGroup(
     s.ball.position.set(bx, by, 0.014 + Math.min(remaining, 0.4) * 0.3);
   }
 
-  if (moving) rebuildOverlays(tactical);
+  // Reconstruir zonas e arcos custa caro: no maximo ~20x por segundo.
+  if (moving) {
+    if (now - s.lastRebuild >= 50) {
+      rebuildOverlays(tactical);
+      s.lastRebuild = now;
+      s.pendingRebuild = false;
+    } else {
+      s.pendingRebuild = true;
+    }
+  } else if (s.pendingRebuild) {
+    rebuildOverlays(tactical);
+    s.lastRebuild = now;
+    s.pendingRebuild = false;
+  }
 
   const seconds = now / 1000;
   s.pulses.forEach((pulse) => {
