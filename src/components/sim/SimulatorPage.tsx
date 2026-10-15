@@ -7,6 +7,7 @@ import { buildShareUrl, encodeTactic, readSharedTactic } from "../../tactics/sha
 import { computePassingLines, computeVoronoiZones } from "../../tactics/engine";
 import { type FormationName } from "../../tactics/formations";
 import { buildHeatmap, TEAM_RGB } from "../../tactics/heat";
+import { Legend } from "../ui/Legend";
 import { FormationPicker } from "./FormationPicker";
 import { prefetchAR } from "../../lib/prefetch";
 import { useTacticalStore } from "../../state/tacticalStore";
@@ -337,6 +338,10 @@ export function SimulatorPage() {
               Cada cor mostra a área do campo mais próxima dos jogadores do time
               (diagrama de Voronoi).
             </p>
+          </section>
+
+          <section className={styles.block}>
+            <Legend />
           </section>
 
           <section className={styles.block}>

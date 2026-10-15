@@ -1,0 +1,162 @@
+.legend {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--chalk-050);
+}
+
+.summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+  padding: 0.5rem 0.75rem;
+  background: rgba(244, 247, 243, 0.06);
+  border: 1px solid var(--line-020);
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1.1rem;
+  color: var(--signal-amber);
+}
+
+.legend[open] > .summary::before {
+  content: "–";
+}
+
+.summary:focus-visible {
+  outline: 2px solid var(--signal-amber);
+  outline-offset: 2px;
+}
+
+.list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.swatches {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+  padding-top: 0.25rem;
+}
+
+.sw {
+  display: inline-block;
+}
+
+.teamA,
+.teamB {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.teamA {
+  background: var(--team-a);
+}
+
+.teamB {
+  background: var(--team-b);
+}
+
+.pass,
+.blocked,
+.best,
+.offside {
+  width: 2.2rem;
+  height: 0;
+  border-top: 3px solid var(--signal-amber);
+}
+
+.blocked {
+  border-top: 2px dashed #9aa0a6;
+}
+
+.best {
+  border-top: 5px solid #5dffb0;
+}
+
+.offside {
+  border-top: 2px solid #ff5a4d;
+}
+
+.ball {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(93, 255, 176, 0.9);
+}
+
+.title {
+  display: block;
+  font-weight: 600;
+}
+
+.text {
+  display: block;
+  color: var(--chalk-300);
+}
+
+.note {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  color: var(--chalk-300);
+}
+
+/* Painel flutuante sobre a camera do AR. */
+.overlay {
+  position: absolute;
+  z-index: 4;
+  top: calc(4.6rem + env(safe-area-inset-top));
+  left: 1.25rem;
+  width: min(23rem, calc(100vw - 2.5rem));
+}
+
+.overlay[open] {
+  max-height: calc(100dvh - 12rem);
+  overflow-y: auto;
+  background: rgba(8, 25, 18, 0.92);
+  border: 1px solid var(--line-020);
+  padding-bottom: 0.75rem;
+}
+
+.overlay[open] > .summary {
+  border: 0;
+  background: transparent;
+}
+
+.overlay .list,
+.overlay .note {
+  padding: 0 0.75rem;
+}
+
+.overlay:not([open]) > .summary {
+  background: rgba(8, 25, 18, 0.82);
+  width: max-content;
+}
+
+@media (max-width: 640px) {
+  /* Abaixo do placar tatico, que ocupa o canto superior direito. */
+  .overlay {
+    top: calc(8.2rem + env(safe-area-inset-top));
+  }
+
+  .overlay[open] {
+    max-height: calc(100dvh - 17rem);
+  }
+}
