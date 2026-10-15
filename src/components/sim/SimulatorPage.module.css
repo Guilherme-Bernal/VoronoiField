@@ -363,3 +363,26 @@
 .panel {
   min-width: 0;
 }
+
+.trailA,
+.trailB {
+  fill: none;
+  stroke-width: 0.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-opacity: 0.55;
+  pointer-events: none;
+}
+
+.trailA {
+  stroke: #8db4ff;
+}
+
+.trailB {
+  stroke: #ff9a92;
+}
+
+.heat {
+  filter: blur(1.6px);
+  pointer-events: none;
+}

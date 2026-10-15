@@ -8,6 +8,7 @@ import {
   type Player,
   type Team,
 } from "../../tactics/engine";
+import { drawHeatmap, type Heatmap, type Trails } from "../../tactics/heat";
 
 const TEAM_COLOR: Record<Team, number> = {
   A: 0x2f6fed,
@@ -41,6 +42,11 @@ export interface TacticalGroupOptions {
   heightScale?: number;
   /** Opacidade das zonas (padrao 0.26). */
   zoneOpacity?: number;
+  /** Rastro de cada jogador na ultima jogada. */
+  trails?: Trails;
+  showTrails?: boolean;
+  /** Mapa de calor ja calculado; null esconde. */
+  heat?: Heatmap | null;
 }
 
 interface PlayerVisual {
@@ -84,6 +90,10 @@ interface SceneState {
   shadowMaterial: THREE.MeshBasicMaterial;
   hitMaterial: THREE.MeshBasicMaterial;
   border: THREE.LineLoop;
+  heatMesh: THREE.Mesh;
+  heatCanvas: HTMLCanvasElement | null;
+  heatTexture: THREE.CanvasTexture | null;
+  lastHeat: Heatmap | null;
 }
 
 export interface TacticalGroup {
@@ -165,6 +175,19 @@ export function createTacticalGroup(): TacticalGroup {
   tokensGroup.name = "tokens";
   const offsideGroup = new THREE.Group();
   offsideGroup.name = "offside";
+  const trailsGroup = new THREE.Group();
+  trailsGroup.name = "trails";
+  const heatMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({
+      transparent: true,
+      depthWrite: false,
+      toneMapped: false,
+    })
+  );
+  heatMesh.name = "heat";
+  heatMesh.position.z = 0.0015;
+  heatMesh.visible = false;
 
   const ball = new THREE.Mesh(
     new THREE.SphereGeometry(0.013, 20, 14),
@@ -207,7 +230,9 @@ export function createTacticalGroup(): TacticalGroup {
   group.add(
     ground,
     border,
+    heatMesh,
     zonesGroup,
+    trailsGroup,
     linesGroup,
     pulsesGroup,
     offsideGroup,
@@ -258,6 +283,10 @@ export function createTacticalGroup(): TacticalGroup {
       depthWrite: false,
     }),
     border,
+    heatMesh,
+    heatCanvas: null,
+    heatTexture: null,
+    lastHeat: null,
   };
 
   const dispose = () => {
@@ -273,6 +302,7 @@ export function createTacticalGroup(): TacticalGroup {
     state.ringMaterial.dispose();
     state.shadowMaterial.dispose();
     state.hitMaterial.dispose();
+    state.heatTexture?.dispose();
   };
 
   return { group, dispose, state };
@@ -406,6 +436,54 @@ function syncPlayers(tactical: TacticalGroup, players: Player[]) {
   });
 
   s.players = players;
+}
+
+const TRAIL_COLOR: Record<Team, number> = { A: 0x8db4ff, B: 0xff9a92 };
+
+/** Redesenha rastros e mapa de calor; so roda quando o estado muda (nao a cada frame). */
+function rebuildTrailsAndHeat(tactical: TacticalGroup) {
+  const s = tactical.state;
+  const trailsGroup = getGroup(tactical, "trails");
+  clearGroup(trailsGroup);
+
+  if (s.options.showTrails && s.options.trails) {
+    for (const [id, pts] of Object.entries(s.options.trails)) {
+      if (pts.length < 2) continue;
+      const team: Team = id.startsWith("B") ? "B" : "A";
+      const points = pts.map(([x, y]) => {
+        const [wx, wy] = toWorld(x, y);
+        return new THREE.Vector3(wx, wy, 0.004);
+      });
+      trailsGroup.add(
+        new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(points),
+          new THREE.LineBasicMaterial({
+            color: TRAIL_COLOR[team],
+            transparent: true,
+            opacity: 0.75,
+          })
+        )
+      );
+    }
+  }
+
+  const heat = s.options.heat ?? null;
+  s.heatMesh.visible = !!heat;
+  s.heatMesh.scale.x = aspect;
+  if (heat && heat !== s.lastHeat && typeof document !== "undefined") {
+    if (!s.heatCanvas) {
+      s.heatCanvas = document.createElement("canvas");
+      s.heatCanvas.width = 512;
+      s.heatCanvas.height = 330;
+      s.heatTexture = new THREE.CanvasTexture(s.heatCanvas);
+      s.heatTexture.colorSpace = THREE.SRGBColorSpace;
+      (s.heatMesh.material as THREE.MeshBasicMaterial).map = s.heatTexture;
+    }
+    drawHeatmap(s.heatCanvas, heat);
+    if (s.heatTexture) s.heatTexture.needsUpdate = true;
+    (s.heatMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
+  }
+  s.lastHeat = heat;
 }
 
 function rebuildOverlays(tactical: TacticalGroup) {
@@ -638,6 +716,7 @@ export function updateTacticalGroup(
   syncPlayers(tactical, players);
   tactical.state.visuals.forEach(placeVisual);
   rebuildOverlays(tactical);
+  rebuildTrailsAndHeat(tactical);
 }
 
 /** Dispara a animacao de entrada (jogadores "caem" no campo, zonas sobem). */

@@ -1,4 +1,5 @@
 ﻿import { Link } from "react-router-dom";
+import { prefetchAR } from "../../lib/prefetch";
 import { Suspense, lazy } from "react";
 import styles from "./HomeScreen.module.css";
 
@@ -26,7 +27,13 @@ export function HomeScreen() {
           <Link to="/sim" className={styles.cta}>
             Abrir simulador
           </Link>
-          <Link to="/ar" className={styles.ctaGhost}>
+          <Link
+            to="/ar"
+            className={styles.ctaGhost}
+            onPointerEnter={prefetchAR}
+            onFocus={prefetchAR}
+            onTouchStart={prefetchAR}
+          >
             Ver em realidade aumentada
           </Link>
         </div>

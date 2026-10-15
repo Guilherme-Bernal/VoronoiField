@@ -2,11 +2,15 @@
 import { computeBestPass, demoPlayers, type Player } from "../tactics/engine";
 import { createMatch, type FormationName } from "../tactics/formations";
 import { planStep, type PlayFrame } from "../tactics/play";
+import type { Trails } from "../tactics/heat";
 
 const PLAY_STEPS = 5;
 const PLAY_STEP_MS = 1100;
 const PLAY_FRAME_MS = 33;
 const MAX_STEPS = 12;
+/** Pontos guardados por jogador no rastro e passo minimo entre eles. */
+const TRAIL_MAX = 160;
+const TRAIL_MIN_STEP = 0.004;
 /** Deslocamento abaixo disto num arrasto conta como "toque": passa a bola ao jogador. */
 const TAP_DISTANCE = 0.012;
 
@@ -28,6 +32,10 @@ interface TacticalState {
   showZones: boolean;
   showPasses: boolean;
   showOffside: boolean;
+  showTrails: boolean;
+  showHeat: boolean;
+  /** Por onde cada jogador passou na ultima jogada. */
+  trails: Trails;
   playing: boolean;
   /** Passos da jogada preparada na prancheta. */
   steps: PlayFrame[];
@@ -38,6 +46,8 @@ interface TacticalState {
   toggleZones: () => void;
   togglePasses: () => void;
   toggleOffside: () => void;
+  toggleTrails: () => void;
+  toggleHeat: () => void;
   setTargetFound: (found: boolean) => void;
   resetFormation: () => void;
   loadMatch: (a: FormationName, b: FormationName) => void;
@@ -63,6 +73,29 @@ interface TacticalState {
 let playTimer: ReturnType<typeof setTimeout> | null = null;
 let dragOrigin: { id: string; x: number; y: number } | null = null;
 
+function seedTrails(players: Player[]): Trails {
+  const trails: Trails = {};
+  players.forEach((p) => {
+    trails[p.id] = [[p.x, p.y]];
+  });
+  return trails;
+}
+
+function extendTrails(trails: Trails, players: Player[]): Trails {
+  const next: Trails = {};
+  players.forEach((p) => {
+    const old = trails[p.id] ?? [];
+    const last = old[old.length - 1];
+    if (last && Math.hypot(p.x - last[0], p.y - last[1]) < TRAIL_MIN_STEP) {
+      next[p.id] = old;
+    } else {
+      const grown = [...old, [p.x, p.y] as [number, number]];
+      next[p.id] = grown.length > TRAIL_MAX ? grown.slice(-TRAIL_MAX) : grown;
+    }
+  });
+  return next;
+}
+
 const cloneFrame = (players: Player[]) => players.map((p) => ({ ...p }));
 
 function clearPlayTimer() {
@@ -81,7 +114,7 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
     steps: PlayFrame[] = []
   ) => {
     clearPlayTimer();
-    set({ players, ballCarrierId: ball, playing: false, steps });
+    set({ players, ballCarrierId: ball, playing: false, steps, trails: {} });
   };
 
   /** Interpola as posicoes de `to` a partir do estado atual e chama onDone no fim. */
@@ -93,12 +126,14 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
       if (!get().playing) return;
       const raw = Math.min(1, (Date.now() - start) / ms);
       const e = easeInOut(raw);
-      set({
-        players: from.map((p) => {
-          const t = target.get(p.id) ?? p;
-          return { ...p, x: p.x + (t.x - p.x) * e, y: p.y + (t.y - p.y) * e };
-        }),
+      const moved = from.map((p) => {
+        const t = target.get(p.id) ?? p;
+        return { ...p, x: p.x + (t.x - p.x) * e, y: p.y + (t.y - p.y) * e };
       });
+      set((state) => ({
+        players: moved,
+        trails: extendTrails(state.trails, moved),
+      }));
       if (raw < 1) {
         playTimer = setTimeout(frame, PLAY_FRAME_MS);
       } else {
@@ -129,6 +164,9 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
     showZones: true,
     showPasses: true,
     showOffside: true,
+    showTrails: true,
+    showHeat: false,
+    trails: {},
     playing: false,
     steps: [],
     targetFound: false,
@@ -149,7 +187,7 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
       clearPlayTimer();
       const player = get().players.find((p) => p.id === id);
       dragOrigin = player ? { id, x: player.x, y: player.y } : null;
-      set({ draggingId: id, playing: false });
+      set({ draggingId: id, playing: false, trails: {} });
     },
     endDrag: () => {
       const origin = dragOrigin;
@@ -168,6 +206,8 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
     toggleZones: () => set((state) => ({ showZones: !state.showZones })),
     togglePasses: () => set((state) => ({ showPasses: !state.showPasses })),
     toggleOffside: () => set((state) => ({ showOffside: !state.showOffside })),
+    toggleTrails: () => set((state) => ({ showTrails: !state.showTrails })),
+    toggleHeat: () => set((state) => ({ showHeat: !state.showHeat })),
     setTargetFound: (found) => set({ targetFound: found }),
     resetFormation: () => {
       const players = demoPlayers();
@@ -204,6 +244,7 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
         players: cloneFrame(frame.players),
         ballCarrierId: frame.ball,
         playing: false,
+        trails: {},
       });
     },
     playSteps: () => {
@@ -214,6 +255,7 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
         playing: true,
         players: cloneFrame(steps[0].players),
         ballCarrierId: steps[0].ball,
+        trails: seedTrails(steps[0].players),
       });
       const go = (i: number) => {
         if (!get().playing) return;
@@ -235,7 +277,7 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
     startPlay: () => {
       if (get().playing) return;
       clearPlayTimer();
-      set({ playing: true });
+      set((state) => ({ playing: true, trails: seedTrails(state.players) }));
       runStep(0);
     },
     stopPlay: () => {

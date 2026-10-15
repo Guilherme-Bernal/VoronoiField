@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CAMERA_PRESETS,
   PITCH_ASPECT,
@@ -12,6 +12,7 @@ import {
   updateTacticalGroup,
 } from "../../lib/ar/tacticalScene";
 import { useTacticalStore } from "../../state/tacticalStore";
+import { buildHeatmap } from "../../tactics/heat";
 import styles from "./Stadium3D.module.css";
 
 /** Simulador em 3D: o mesmo estado do simulador 2D, visto como numa transmissao. */
@@ -28,6 +29,13 @@ export function Stadium3D() {
   const showOffside = useTacticalStore((s) => s.showOffside);
   const draggingId = useTacticalStore((s) => s.draggingId);
   const ballCarrierId = useTacticalStore((s) => s.ballCarrierId);
+  const showTrails = useTacticalStore((s) => s.showTrails);
+  const showHeat = useTacticalStore((s) => s.showHeat);
+  const trails = useTacticalStore((s) => s.trails);
+  const heat = useMemo(
+    () => (showHeat ? buildHeatmap(trails) : null),
+    [showHeat, trails]
+  );
 
   useEffect(() => {
     const host = hostRef.current;
@@ -104,9 +112,22 @@ export function Stadium3D() {
       maxPassDistance: 0.22,
       pawnScale: 0.6,
       heightScale: 0.35,
-        zoneOpacity: 0.18,
+      zoneOpacity: 0.18,
+      trails,
+      showTrails,
+      heat,
     });
-  }, [players, showZones, showPasses, showOffside, draggingId, ballCarrierId]);
+  }, [
+    players,
+    showZones,
+    showPasses,
+    showOffside,
+    draggingId,
+    ballCarrierId,
+    trails,
+    showTrails,
+    heat,
+  ]);
 
   const choose = (next: CameraPreset) => {
     setPreset(next);

@@ -5,7 +5,10 @@ import { Stadium3D } from "../three/Stadium3D";
 import { analyzeTactic } from "../../tactics/analysis";
 import { buildShareUrl, encodeTactic, readSharedTactic } from "../../tactics/share";
 import { computePassingLines, computeVoronoiZones } from "../../tactics/engine";
-import { FORMATION_NAMES, type FormationName } from "../../tactics/formations";
+import { type FormationName } from "../../tactics/formations";
+import { buildHeatmap, TEAM_RGB } from "../../tactics/heat";
+import { FormationPicker } from "./FormationPicker";
+import { prefetchAR } from "../../lib/prefetch";
 import { useTacticalStore } from "../../state/tacticalStore";
 import styles from "./SimulatorPage.module.css";
 
@@ -30,6 +33,11 @@ export function SimulatorPage() {
   const showOffside = useTacticalStore((s) => s.showOffside);
   const playing = useTacticalStore((s) => s.playing);
   const toggleOffside = useTacticalStore((s) => s.toggleOffside);
+  const showTrails = useTacticalStore((s) => s.showTrails);
+  const showHeat = useTacticalStore((s) => s.showHeat);
+  const trails = useTacticalStore((s) => s.trails);
+  const toggleTrails = useTacticalStore((s) => s.toggleTrails);
+  const toggleHeat = useTacticalStore((s) => s.toggleHeat);
   const startPlay = useTacticalStore((s) => s.startPlay);
   const stopPlay = useTacticalStore((s) => s.stopPlay);
   const passBall = useTacticalStore((s) => s.passBall);
@@ -56,6 +64,11 @@ export function SimulatorPage() {
 
   useEffect(() => resetFormation, [resetFormation]);
   useEffect(() => stopPlay, [stopPlay]);
+  // O AR e pesado: baixa em segundo plano para abrir rapido quando o usuario clicar.
+  useEffect(() => {
+    const id = window.setTimeout(prefetchAR, 2500);
+    return () => window.clearTimeout(id);
+  }, []);
 
   const chooseFormationA = (value: FormationName) => {
     setShared(null);
@@ -83,6 +96,10 @@ export function SimulatorPage() {
   const lines = useMemo(
     () => computePassingLines(players, 0.04, MAX_PASS_DISTANCE),
     [players]
+  );
+  const heat = useMemo(
+    () => (showHeat ? buildHeatmap(trails) : null),
+    [showHeat, trails]
   );
   const byId = useMemo(
     () => new Map(players.map((p) => [p.id, p])),
@@ -140,6 +157,9 @@ export function SimulatorPage() {
         <Link
           to={`/ar?t=${encodeTactic(players, ballCarrierId, steps)}`}
           className={styles.arLink}
+          onPointerEnter={prefetchAR}
+          onFocus={prefetchAR}
+          onTouchStart={prefetchAR}
         >
           Abrir em AR
         </Link>
@@ -171,6 +191,47 @@ export function SimulatorPage() {
                     points={zone.polygon
                       .map(([x, y]) => `${x * PITCH_W},${y * PITCH_H}`)
                       .join(" ")}
+                  />
+                ) : null
+              )}
+
+            {heat && (
+              <g className={styles.heat}>
+              {Array.from({ length: heat.cols * heat.rows }, (_, i) => {
+                const a = heat.A[i];
+                const b = heat.B[i];
+                const total = a + b;
+                if (total < 0.04) return null;
+                const [ar, ag, ab] = TEAM_RGB.A;
+                const [br, bg, bb] = TEAM_RGB.B;
+                const fill = `rgb(${Math.round((ar * a + br * b) / total)} ${Math.round(
+                  (ag * a + bg * b) / total
+                )} ${Math.round((ab * a + bb * b) / total)})`;
+                const cw = PITCH_W / heat.cols;
+                const ch = PITCH_H / heat.rows;
+                return (
+                  <rect
+                    key={i}
+                    x={(i % heat.cols) * cw}
+                    y={Math.floor(i / heat.cols) * ch}
+                    width={cw + 0.05}
+                    height={ch + 0.05}
+                    fill={fill}
+                    fillOpacity={Math.min(0.85, Math.max(a, b) * 0.85)}
+                    pointerEvents="none"
+                  />
+                );
+              })}
+              </g>
+            )}
+
+            {showTrails &&
+              Object.entries(trails).map(([id, pts]) =>
+                pts.length > 1 ? (
+                  <polyline
+                    key={id}
+                    className={id.startsWith("A") ? styles.trailA : styles.trailB}
+                    points={pts.map(([x, y]) => `${x * PITCH_W},${y * PITCH_H}`).join(" ")}
                   />
                 ) : null
               )}
@@ -280,28 +341,18 @@ export function SimulatorPage() {
 
           <section className={styles.block}>
             <h2 className={styles.blockTitle}>Formações</h2>
-            <label className={styles.field}>
-              <span className={styles.swatchA} /> Time azul
-              <select
-                value={formationA}
-                onChange={(e) => chooseFormationA(e.target.value as FormationName)}
-              >
-                {FORMATION_NAMES.map((name) => (
-                  <option key={name}>{name}</option>
-                ))}
-              </select>
-            </label>
-            <label className={styles.field}>
-              <span className={styles.swatchB} /> Time vermelho
-              <select
-                value={formationB}
-                onChange={(e) => chooseFormationB(e.target.value as FormationName)}
-              >
-                {FORMATION_NAMES.map((name) => (
-                  <option key={name}>{name}</option>
-                ))}
-              </select>
-            </label>
+            <FormationPicker
+              team="A"
+              label="Time azul"
+              value={formationA}
+              onChange={chooseFormationA}
+            />
+            <FormationPicker
+              team="B"
+              label="Time vermelho"
+              value={formationB}
+              onChange={chooseFormationB}
+            />
           </section>
 
           <section className={styles.block}>
@@ -330,6 +381,22 @@ export function SimulatorPage() {
                 onClick={toggleOffside}
               >
                 Impedimento
+              </button>
+              <button
+                type="button"
+                className={`${styles.toggle} ${showTrails ? styles.toggleActive : ""}`}
+                aria-pressed={showTrails}
+                onClick={toggleTrails}
+              >
+                Rastro
+              </button>
+              <button
+                type="button"
+                className={`${styles.toggle} ${showHeat ? styles.toggleActive : ""}`}
+                aria-pressed={showHeat}
+                onClick={toggleHeat}
+              >
+                Calor
               </button>
               <button
                 type="button"
