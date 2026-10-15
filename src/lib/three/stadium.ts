@@ -4,6 +4,7 @@ import {
   createTacticalGroup,
   type TacticalGroup,
 } from "../ar/tacticalScene";
+import { makePitchTexture } from "./pitchTexture";
 
 /** Campo real: 105 m x 68 m. A altura do campo vale 1 unidade na cena. */
 export const PITCH_ASPECT = 105 / 68;
@@ -42,75 +43,6 @@ export interface StadiumView {
   dispose: () => void;
 }
 
-const PITCH_W = 105;
-const PITCH_H = 68;
-
-function makePitchTexture(): THREE.CanvasTexture {
-  const scale = 20;
-  const canvas = document.createElement("canvas");
-  canvas.width = PITCH_W * scale;
-  canvas.height = PITCH_H * scale;
-  const ctx = canvas.getContext("2d")!;
-
-  const stripes = 15;
-  for (let i = 0; i < stripes; i++) {
-    ctx.fillStyle = i % 2 === 0 ? "#1f6a42" : "#1a5c39";
-    ctx.fillRect((i * canvas.width) / stripes, 0, canvas.width / stripes + 1, canvas.height);
-  }
-
-  const m = (v: number) => v * scale;
-  ctx.strokeStyle = "rgba(244, 247, 243, 0.92)";
-  ctx.fillStyle = "rgba(244, 247, 243, 0.92)";
-  ctx.lineWidth = 0.18 * scale * 1.6;
-  ctx.lineCap = "round";
-
-  const line = (x1: number, y1: number, x2: number, y2: number) => {
-    ctx.beginPath();
-    ctx.moveTo(m(x1), m(y1));
-    ctx.lineTo(m(x2), m(y2));
-    ctx.stroke();
-  };
-  const rect = (x: number, y: number, w: number, h: number) =>
-    ctx.strokeRect(m(x), m(y), m(w), m(h));
-  const arc = (x: number, y: number, r: number, a0 = 0, a1 = Math.PI * 2) => {
-    ctx.beginPath();
-    ctx.arc(m(x), m(y), m(r), a0, a1);
-    ctx.stroke();
-  };
-  const spot = (x: number, y: number) => {
-    ctx.beginPath();
-    ctx.arc(m(x), m(y), m(0.35), 0, Math.PI * 2);
-    ctx.fill();
-  };
-
-  rect(0.3, 0.3, PITCH_W - 0.6, PITCH_H - 0.6);
-  line(PITCH_W / 2, 0.3, PITCH_W / 2, PITCH_H - 0.3);
-  arc(PITCH_W / 2, PITCH_H / 2, 9.15);
-  spot(PITCH_W / 2, PITCH_H / 2);
-
-  const boxY = (PITCH_H - 40.32) / 2;
-  const goalY = (PITCH_H - 18.32) / 2;
-  rect(0.3, boxY, 16.5, 40.32);
-  rect(PITCH_W - 16.8, boxY, 16.5, 40.32);
-  rect(0.3, goalY, 5.5, 18.32);
-  rect(PITCH_W - 5.8, goalY, 5.5, 18.32);
-  spot(11, PITCH_H / 2);
-  spot(PITCH_W - 11, PITCH_H / 2);
-
-  const a = Math.acos(5.5 / 9.15);
-  arc(11, PITCH_H / 2, 9.15, -a, a);
-  arc(PITCH_W - 11, PITCH_H / 2, 9.15, Math.PI - a, Math.PI + a);
-  arc(0.3, 0.3, 1, 0, Math.PI / 2);
-  arc(PITCH_W - 0.3, 0.3, 1, Math.PI / 2, Math.PI);
-  arc(0.3, PITCH_H - 0.3, 1, -Math.PI / 2, 0);
-  arc(PITCH_W - 0.3, PITCH_H - 0.3, 1, Math.PI, Math.PI * 1.5);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
-  return texture;
-}
-
 function makeCrowdTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -135,6 +67,8 @@ function makeCrowdTexture(): THREE.CanvasTexture {
   texture.repeat.set(3, 1);
   return texture;
 }
+
+const PITCH_H = 68;
 
 function addGoal(scene: THREE.Scene, side: 1 | -1) {
   const unit = 1 / PITCH_H;

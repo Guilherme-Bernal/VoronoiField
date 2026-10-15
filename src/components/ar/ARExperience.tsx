@@ -92,8 +92,21 @@ export function ARExperience() {
       labels: true,
       ballCarrierId,
       showOffside,
-      // Com 22 jogadores, so os passes curtos (alivia o celular).
-      maxPassDistance: players.length > 8 ? 0.3 : undefined,
+      // Gramado com marcacoes cobre o marcador: o desenho fica limpo e a camera
+      // continua rastreando o marcador pelo video.
+      pitch: true,
+      heightScale: 0.3,
+      zoneOpacity: 0.24,
+      // So os passes de quem esta com a bola: mais legivel e mais leve no celular.
+      passMode: "carrier" as const,
+      // Com 22 jogadores: peoes e numeros menores.
+      ...(players.length > 8
+        ? {
+            maxPassDistance: 0.34,
+            pawnScale: 0.74,
+            labelScale: 0.95,
+          }
+        : { pawnScale: 1.1, labelScale: 1.15 }),
     });
   }, [players, showZones, showPasses, draggingId, ballCarrierId, showOffside]);
 

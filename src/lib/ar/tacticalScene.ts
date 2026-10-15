@@ -8,6 +8,7 @@ import {
   type Player,
   type Team,
 } from "../../tactics/engine";
+import { makePitchTexture } from "../three/pitchTexture";
 import { drawHeatmap, type Heatmap, type Trails } from "../../tactics/heat";
 
 const TEAM_COLOR: Record<Team, number> = {
@@ -42,6 +43,14 @@ export interface TacticalGroupOptions {
   heightScale?: number;
   /** Opacidade das zonas (padrao 0.26). */
   zoneOpacity?: number;
+  /** Escala dos numeros acima dos jogadores (padrao 1). */
+  labelScale?: number;
+  /** "carrier": so os passes do portador da bola (menos poluicao com 22 jogadores). */
+  passMode?: "all" | "carrier";
+  /** Veu escuro sob o campo: da contraste sobre um marcador cheio de textura. */
+  veil?: boolean;
+  /** Gramado com marcacoes sob as zonas (cobre o marcador, que so a camera precisa ver). */
+  pitch?: boolean;
   /** Rastro de cada jogador na ultima jogada. */
   trails?: Trails;
   showTrails?: boolean;
@@ -94,6 +103,8 @@ interface SceneState {
   heatCanvas: HTMLCanvasElement | null;
   heatTexture: THREE.CanvasTexture | null;
   lastHeat: Heatmap | null;
+  pitchMesh: THREE.Mesh;
+  pitchTexture: THREE.CanvasTexture | null;
 }
 
 export interface TacticalGroup {
@@ -128,6 +139,7 @@ function clearGroup(group: THREE.Group) {
 let aspect = 1;
 let pawnScale = 1;
 let heightScale = 1;
+let labelScale = 1;
 
 function toWorld(x: number, y: number): [number, number] {
   return [(x - 0.5) * aspect, 0.5 - y];
@@ -177,6 +189,32 @@ export function createTacticalGroup(): TacticalGroup {
   offsideGroup.name = "offside";
   const trailsGroup = new THREE.Group();
   trailsGroup.name = "trails";
+  const pitchMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.93,
+      depthWrite: false,
+      toneMapped: false,
+    })
+  );
+  pitchMesh.name = "pitch";
+  pitchMesh.renderOrder = -10;
+  pitchMesh.position.z = 0.0002;
+  pitchMesh.visible = false;
+  const veil = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({
+      color: 0x06140e,
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+    })
+  );
+  veil.name = "veil";
+  veil.renderOrder = -9;
+  veil.position.z = 0.0003;
+  veil.visible = false;
   const heatMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
     new THREE.MeshBasicMaterial({
@@ -230,6 +268,8 @@ export function createTacticalGroup(): TacticalGroup {
   group.add(
     ground,
     border,
+    pitchMesh,
+    veil,
     heatMesh,
     zonesGroup,
     trailsGroup,
@@ -287,6 +327,8 @@ export function createTacticalGroup(): TacticalGroup {
     heatCanvas: null,
     heatTexture: null,
     lastHeat: null,
+    pitchMesh,
+    pitchTexture: null,
   };
 
   const dispose = () => {
@@ -303,6 +345,7 @@ export function createTacticalGroup(): TacticalGroup {
     state.shadowMaterial.dispose();
     state.hitMaterial.dispose();
     state.heatTexture?.dispose();
+    state.pitchTexture?.dispose();
   };
 
   return { group, dispose, state };
@@ -378,7 +421,7 @@ function ensureLabel(tactical: TacticalGroup, visual: PlayerVisual) {
       depthWrite: false,
     })
   );
-  sprite.scale.set(0.055, 0.055, 1);
+  sprite.scale.set(0.055 * labelScale, 0.055 * labelScale, 1);
   sprite.userData.playerId = visual.id;
   visual.group.add(sprite);
   visual.label = sprite;
@@ -402,7 +445,10 @@ function placeVisual(visual: PlayerVisual) {
   visual.shadow.scale.setScalar(
     Math.max(0.001, (1 + visual.lift * 0.3) * (0.3 + 0.7 * visual.drop))
   );
-  if (visual.label) visual.label.position.z = 0.135 + z;
+  if (visual.label) {
+    visual.label.scale.set(0.055 * labelScale, 0.055 * labelScale, 1);
+    visual.label.position.z = (0.135 * (0.55 + 0.45 * labelScale)) + z;
+  }
 }
 
 function syncPlayers(tactical: TacticalGroup, players: Player[]) {
@@ -546,7 +592,7 @@ function rebuildOverlays(tactical: TacticalGroup) {
         new THREE.LineBasicMaterial({
           color: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.35),
           transparent: true,
-          opacity: 0.95,
+          opacity: Math.min(0.95, (s.options.zoneOpacity ?? 0.26) * 3.2),
         })
       );
       const zoneGroup = new THREE.Group();
@@ -558,7 +604,14 @@ function rebuildOverlays(tactical: TacticalGroup) {
 
   if (s.options.showPasses) {
     const byId = new Map(current.map((p) => [p.id, p]));
+    const onlyCarrier = s.options.passMode === "carrier" && !!s.options.ballCarrierId;
     computePassingLines(current, 0.06, s.options.maxPassDistance ?? Infinity).forEach((line, index) => {
+      if (
+        onlyCarrier &&
+        line.from !== s.options.ballCarrierId &&
+        line.to !== s.options.ballCarrierId
+      )
+        return;
       const from = byId.get(line.from);
       const to = byId.get(line.to);
       if (!from || !to) return;
@@ -651,7 +704,7 @@ function rebuildOverlays(tactical: TacticalGroup) {
   const offside = offsideOn && carrierId ? computeOffside(current, carrierId) : null;
   if (offside) {
     const [lx] = toWorld(offside.x, 0);
-    const height = 0.1;
+    const height = 0.1 * Math.min(1, Math.max(0.25, heightScale));
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
       "position",
@@ -711,6 +764,22 @@ export function updateTacticalGroup(
   aspect = options.aspect ?? 1;
   pawnScale = options.pawnScale ?? 1;
   heightScale = options.heightScale ?? 1;
+  labelScale = options.labelScale ?? 1;
+  const veil = tactical.group.getObjectByName("veil") as THREE.Mesh;
+  veil.visible = !!options.veil;
+  veil.scale.x = aspect;
+  const s = tactical.state;
+  s.pitchMesh.visible = !!options.pitch;
+  s.pitchMesh.scale.x = aspect;
+  if (options.pitch && !s.pitchTexture && typeof document !== "undefined") {
+    try {
+      s.pitchTexture = makePitchTexture(9, true, true);
+      (s.pitchMesh.material as THREE.MeshBasicMaterial).map = s.pitchTexture;
+      (s.pitchMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    } catch {
+      s.pitchMesh.visible = false;
+    }
+  }
   getGroup(tactical, "ground").scale.x = aspect;
   getGroup(tactical, "border").scale.x = aspect;
   syncPlayers(tactical, players);
@@ -736,6 +805,7 @@ export function tickTacticalGroup(
   aspect = s.options.aspect ?? 1;
   pawnScale = s.options.pawnScale ?? 1;
   heightScale = s.options.heightScale ?? 1;
+  labelScale = s.options.labelScale ?? 1;
   const dt =
     s.lastTime === null ? 0.016 : Math.min(0.05, (now - s.lastTime) / 1000);
   s.lastTime = now;
