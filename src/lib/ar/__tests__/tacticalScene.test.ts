@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
   createTacticalGroup,
@@ -38,7 +38,7 @@ describe("updateTacticalGroup", () => {
     { id: "B1", team: "B", x: 0.8, y: 0.5 },
   ];
 
-  it("gera um token e um anel para cada jogador", () => {
+  it("gera um peao 3D para cada jogador", () => {
     const tactical = createTacticalGroup();
     updateTacticalGroup(tactical, players, {
       showZones: false,
@@ -46,7 +46,7 @@ describe("updateTacticalGroup", () => {
     });
 
     const tokens = findGroup(tactical.group, "tokens");
-    expect(tokens.children).toHaveLength(players.length * 2);
+    expect(tokens.children).toHaveLength(players.length);
   });
 
   it("posiciona o token do jogador convertendo coordenadas normalizadas", () => {
@@ -113,6 +113,6 @@ describe("updateTacticalGroup", () => {
     });
 
     const tokens = findGroup(tactical.group, "tokens");
-    expect(tokens.children).toHaveLength(2);
+    expect(tokens.children).toHaveLength(1);
   });
 });

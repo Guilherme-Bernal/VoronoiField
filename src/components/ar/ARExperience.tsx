@@ -3,6 +3,8 @@ import * as THREE from "three";
 import { useMindAR } from "../../lib/ar/useMindAR";
 import {
   createTacticalGroup,
+  revealTactical,
+  tickTacticalGroup,
   updateTacticalGroup,
 } from "../../lib/ar/tacticalScene";
 import { useTacticalStore } from "../../state/tacticalStore";
@@ -46,6 +48,7 @@ export function ARExperience() {
   const players = useTacticalStore((s) => s.players);
   const showZones = useTacticalStore((s) => s.showZones);
   const showPasses = useTacticalStore((s) => s.showPasses);
+  const draggingId = useTacticalStore((s) => s.draggingId);
   const setPlayerPosition = useTacticalStore((s) => s.setPlayerPosition);
   const startDrag = useTacticalStore((s) => s.startDrag);
   const endDrag = useTacticalStore((s) => s.endDrag);
@@ -71,8 +74,26 @@ export function ARExperience() {
     updateTacticalGroup(tacticalRef.current, players, {
       showZones,
       showPasses,
+      draggingId,
+      labels: true,
     });
-  }, [players, showZones, showPasses]);
+  }, [players, showZones, showPasses, draggingId]);
+
+  // Animacoes (deslize dos jogadores, pulsos nos passes, entrada).
+  useEffect(() => {
+    let frame = 0;
+    const loop = (now: number) => {
+      tickTacticalGroup(tacticalRef.current, now);
+      frame = requestAnimationFrame(loop);
+    };
+    frame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Toda vez que o marcador e (re)detectado, o campo "entra" animado.
+  useEffect(() => {
+    if (targetFound) revealTactical(tacticalRef.current);
+  }, [targetFound]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -94,7 +115,7 @@ export function ARExperience() {
       const tokens = tacticalRef.current.group.getObjectByName("tokens");
       if (!tokens) return;
       const hit = raycaster
-        .intersectObjects(tokens.children, false)
+        .intersectObjects(tokens.children, true)
         .find((intersection) => intersection.object.userData.playerId);
       if (hit) {
         const playerId = hit.object.userData.playerId as string;
