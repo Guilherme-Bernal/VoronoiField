@@ -13,7 +13,7 @@ import { readSharedTactic } from "../../tactics/share";
 import { useCameras } from "../../lib/ar/useCameras";
 import { CameraPicker } from "./CameraPicker";
 import { ScanFrame } from "./ScanFrame";
-import { Legend } from "../ui/Legend";
+import { ARPanels } from "../ui/ARPanels";
 import { ARHint } from "./ARHint";
 import { HUD } from "../ui/HUD";
 import styles from "./ARExperience.module.css";
@@ -211,7 +211,7 @@ export function ARExperience() {
       <CameraPicker cameras={cameras} value={deviceId} onChange={setDeviceId} />
       <ScanFrame visible={ready && !targetFound} />
       <ARHint />
-      <Legend variant="overlay" />
+      <ARPanels />
       <HUD />
     </div>
   );

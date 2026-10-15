@@ -1,0 +1,26 @@
+.stack {
+  position: absolute;
+  z-index: 4;
+  top: calc(4.6rem + env(safe-area-inset-top));
+  left: 1.25rem;
+  width: min(23rem, calc(100vw - 2.5rem));
+  max-height: calc(100dvh - 12rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  /* Os chips fechados nao bloqueiam o toque na camera ao lado. */
+  pointer-events: none;
+}
+
+.stack > * {
+  pointer-events: auto;
+}
+
+@media (max-width: 640px) {
+  /* Abaixo do placar tatico, que ocupa o canto superior direito. */
+  .stack {
+    top: calc(8.2rem + env(safe-area-inset-top));
+    max-height: calc(100dvh - 17rem);
+  }
+}

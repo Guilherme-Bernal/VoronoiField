@@ -1,0 +1,50 @@
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.item {
+  display: grid;
+  gap: 0.1rem;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--chalk-050);
+  background: rgba(244, 247, 243, 0.05);
+  border: 1px solid var(--line-020);
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.item:hover {
+  border-color: rgba(244, 247, 243, 0.4);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--signal-amber);
+  outline-offset: 2px;
+}
+
+.active {
+  border-color: var(--signal-amber);
+  background: rgba(242, 183, 5, 0.12);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.question {
+  font-size: 0.78rem;
+  color: var(--chalk-300);
+}
+
+.look {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--chalk-300);
+}

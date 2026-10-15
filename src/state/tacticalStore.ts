@@ -34,6 +34,8 @@ interface TacticalState {
   showOffside: boolean;
   showTrails: boolean;
   showHeat: boolean;
+  /** Ponto de partida da comparacao do painel de Resultado. */
+  baseline: PlayFrame | null;
   /** Por onde cada jogador passou na ultima jogada. */
   trails: Trails;
   playing: boolean;
@@ -48,6 +50,10 @@ interface TacticalState {
   toggleOffside: () => void;
   toggleTrails: () => void;
   toggleHeat: () => void;
+  /** Usa as posicoes atuais como novo ponto de partida do Resultado. */
+  markBaseline: () => void;
+  /** Carrega um cenario pronto; o ponto de partida do Resultado e `baseline` (ou o proprio cenario). */
+  applyScenario: (frame: PlayFrame, baseline?: PlayFrame) => void;
   setTargetFound: (found: boolean) => void;
   resetFormation: () => void;
   loadMatch: (a: FormationName, b: FormationName) => void;
@@ -114,7 +120,14 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
     steps: PlayFrame[] = []
   ) => {
     clearPlayTimer();
-    set({ players, ballCarrierId: ball, playing: false, steps, trails: {} });
+    set({
+      players,
+      ballCarrierId: ball,
+      playing: false,
+      steps,
+      trails: {},
+      baseline: { players: cloneFrame(players), ball },
+    });
   };
 
   /** Interpola as posicoes de `to` a partir do estado atual e chama onDone no fim. */
@@ -166,6 +179,7 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
     showOffside: true,
     showTrails: true,
     showHeat: false,
+    baseline: { players: cloneFrame(demoPlayers()), ball: "A4" },
     trails: {},
     playing: false,
     steps: [],
@@ -208,6 +222,21 @@ export const useTacticalStore = create<TacticalState>((set, get) => {
     toggleOffside: () => set((state) => ({ showOffside: !state.showOffside })),
     toggleTrails: () => set((state) => ({ showTrails: !state.showTrails })),
     toggleHeat: () => set((state) => ({ showHeat: !state.showHeat })),
+    markBaseline: () =>
+      set((state) => ({
+        baseline: {
+          players: cloneFrame(state.players),
+          ball: state.ballCarrierId,
+        },
+      })),
+    applyScenario: (frame, baseline) => {
+      replace(cloneFrame(frame.players), frame.ball ?? defaultCarrier(frame.players));
+      if (baseline) {
+        set({
+          baseline: { players: cloneFrame(baseline.players), ball: baseline.ball },
+        });
+      }
+    },
     setTargetFound: (found) => set({ targetFound: found }),
     resetFormation: () => {
       const players = demoPlayers();

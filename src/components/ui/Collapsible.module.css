@@ -1,0 +1,59 @@
+.panel {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--chalk-050);
+}
+
+.summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+  padding: 0.5rem 0.75rem;
+  background: rgba(244, 247, 243, 0.06);
+  border: 1px solid var(--line-020);
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1.1rem;
+  color: var(--signal-amber);
+}
+
+.panel[open] > .summary::before {
+  content: "–";
+}
+
+.summary:focus-visible {
+  outline: 2px solid var(--signal-amber);
+  outline-offset: 2px;
+}
+
+.body {
+  padding-top: 0.5rem;
+}
+
+/* Painel flutuante sobre a camera do AR. */
+.overlay:not([open]) > .summary {
+  background: rgba(8, 25, 18, 0.82);
+  width: max-content;
+}
+
+.overlay[open] {
+  background: rgba(8, 25, 18, 0.92);
+  border: 1px solid var(--line-020);
+  padding-bottom: 0.75rem;
+}
+
+.overlay[open] > .summary {
+  border: 0;
+  background: transparent;
+}
+
+.overlay .body {
+  padding: 0 0.75rem;
+}

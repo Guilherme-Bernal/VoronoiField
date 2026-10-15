@@ -116,8 +116,9 @@ describe("planStep", () => {
     step.targets.forEach((t, i) => {
       expect(t.x).toBeGreaterThanOrEqual(0.03);
       expect(t.x).toBeLessThanOrEqual(0.97);
-      if (t.id.endsWith("1")) expect(t.x).toBe(players[i].x);
-      if (t.team === "A" && !t.id.endsWith("1")) {
+      const keeper = t.id.slice(1) === "1";
+      if (keeper) expect(t.x).toBe(players[i].x);
+      if (t.team === "A" && !keeper) {
         expect(t.x).toBeGreaterThan(players[i].x);
       }
     });

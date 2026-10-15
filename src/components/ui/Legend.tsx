@@ -1,3 +1,4 @@
+import { Collapsible } from "./Collapsible";
 import styles from "./Legend.module.css";
 import { LEGEND_ITEMS } from "./legendItems";
 
@@ -5,16 +6,18 @@ interface Props {
   /** "overlay" flutua sobre a câmera (AR); "inline" cabe num painel. */
   variant?: "overlay" | "inline";
   defaultOpen?: boolean;
+  group?: string;
 }
 
 /** Explica o que cada cor e linha da análise tática significa. */
-export function Legend({ variant = "inline", defaultOpen = false }: Props) {
+export function Legend({ variant = "inline", defaultOpen = false, group }: Props) {
   return (
-    <details
-      className={`${styles.legend} ${variant === "overlay" ? styles.overlay : ""}`}
-      open={defaultOpen}
+    <Collapsible
+      title="Como ler esta tela"
+      variant={variant}
+      defaultOpen={defaultOpen}
+      group={group}
     >
-      <summary className={styles.summary}>Como ler esta tela</summary>
       <ul className={styles.list}>
         {LEGEND_ITEMS.map((item) => (
           <li key={item.title} className={styles.item}>
@@ -35,6 +38,6 @@ export function Legend({ variant = "inline", defaultOpen = false }: Props) {
         corpo nem habilidade. O botão Jogar move todos numa sequência automática simples
         e recalcula tudo a cada passo.
       </p>
-    </details>
+    </Collapsible>
   );
 }

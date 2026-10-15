@@ -5,6 +5,9 @@ import {
   type Player,
 } from "./engine";
 
+/** O goleiro e o numero 1 de cada time (A1, B1); A11 e B11 sao atacantes. */
+export const isGoalkeeper = (id: string) => id.slice(1) === "1";
+
 const clamp = (value: number, min = 0.03, max = 0.97) =>
   Math.min(max, Math.max(min, value));
 
@@ -34,7 +37,7 @@ export function planStep(players: Player[], carrierId: string | null): PlayStep 
   const pass = computeBestPass(players, carrier.id);
 
   const targets = players.map((p) => {
-    if (p.id.endsWith("1")) return { ...p }; // goleiro fica
+    if (isGoalkeeper(p.id)) return { ...p }; // goleiro fica
     if (p.team === carrier.team) {
       let dx = 0.05 * dir;
       if (p.id === carrier.id) dx = 0.03 * dir;

@@ -36,3 +36,21 @@ describe("rastro da jogada", () => {
     expect(Math.max(...sizes)).toBeLessThanOrEqual(160);
   });
 });
+
+describe("ponto de partida do resultado", () => {
+  it("loadMatch e applyScenario definem o baseline; markBaseline usa a posicao atual", () => {
+    const s = useTacticalStore.getState();
+    s.loadMatch("4-4-2", "4-3-3");
+    expect(useTacticalStore.getState().baseline?.players).toHaveLength(22);
+
+    s.setPlayerPosition("A8", 0.7, 0.4);
+    expect(useTacticalStore.getState().baseline?.players.find((p) => p.id === "A8")!.x).not.toBeCloseTo(0.7, 2);
+
+    s.markBaseline();
+    expect(useTacticalStore.getState().baseline?.players.find((p) => p.id === "A8")!.x).toBeCloseTo(0.7, 5);
+
+    s.applyScenario({ players: useTacticalStore.getState().players.map((p) => ({ ...p, x: 0.5 })), ball: "A8" });
+    expect(useTacticalStore.getState().ballCarrierId).toBe("A8");
+    expect(useTacticalStore.getState().baseline?.players.every((p) => p.x === 0.5)).toBe(true);
+  });
+});
