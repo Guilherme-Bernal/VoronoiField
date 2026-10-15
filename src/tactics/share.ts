@@ -1,9 +1,14 @@
 import type { Player } from "./engine";
+import type { PlayFrame } from "./play";
 
 export interface SharedTactic {
   players: Player[];
   ball: string | null;
+  /** Passos da jogada preparada (mesma ordem de `players`). */
+  steps: PlayFrame[];
 }
+
+const MAX_STEPS = 12;
 
 const ID_PATTERN = /^[AB]\d{1,2}$/;
 
@@ -17,10 +22,24 @@ function fromBase64Url(token: string): string {
 }
 
 /** Codifica as posicoes (milesimos) e o portador da bola em um texto curto para URL. */
-export function encodeTactic(players: Player[], ball: string | null): string {
+export function encodeTactic(
+  players: Player[],
+  ball: string | null,
+  steps: PlayFrame[] = []
+): string {
+  const order = players.map((p) => p.id);
   return toBase64Url(
     JSON.stringify({
       b: ball,
+      s: steps.map((frame) => {
+        const byId = new Map(frame.players.map((p) => [p.id, p]));
+        const flat: number[] = [];
+        order.forEach((id) => {
+          const q = byId.get(id);
+          flat.push(Math.round((q?.x ?? 0) * 1000), Math.round((q?.y ?? 0) * 1000));
+        });
+        return [frame.ball, flat];
+      }),
       p: players.map((p) => [
         p.id,
         Math.round(p.x * 1000),
@@ -33,7 +52,11 @@ export function encodeTactic(players: Player[], ball: string | null): string {
 export function decodeTactic(token: string | null | undefined): SharedTactic | null {
   if (!token) return null;
   try {
-    const data = JSON.parse(fromBase64Url(token)) as { b?: unknown; p?: unknown };
+    const data = JSON.parse(fromBase64Url(token)) as {
+      b?: unknown;
+      p?: unknown;
+      s?: unknown;
+    };
     if (!Array.isArray(data.p) || data.p.length < 2 || data.p.length > 30) {
       return null;
     }
@@ -62,7 +85,29 @@ export function decodeTactic(token: string | null | undefined): SharedTactic | n
     }
     const ball =
       typeof data.b === "string" && seen.has(data.b) ? data.b : null;
-    return { players, ball };
+
+    const steps: PlayFrame[] = [];
+    if (Array.isArray(data.s)) {
+      if (data.s.length > MAX_STEPS) return null;
+      for (const item of data.s) {
+        if (!Array.isArray(item) || item.length !== 2) return null;
+        const [frameBall, flat] = item as [unknown, unknown];
+        if (!Array.isArray(flat) || flat.length !== players.length * 2) return null;
+        if (flat.some((n) => typeof n !== "number" || !(n >= 0 && n <= 1000))) {
+          return null;
+        }
+        steps.push({
+          ball:
+            typeof frameBall === "string" && seen.has(frameBall) ? frameBall : null,
+          players: players.map((p, i) => ({
+            ...p,
+            x: (flat[i * 2] as number) / 1000,
+            y: (flat[i * 2 + 1] as number) / 1000,
+          })),
+        });
+      }
+    }
+    return { players, ball, steps };
   } catch {
     return null;
   }
@@ -76,7 +121,8 @@ export function buildShareUrl(
   path: string,
   players: Player[],
   ball: string | null,
+  steps: PlayFrame[] = [],
   origin: string = window.location.origin
 ): string {
-  return `${origin}${path}?t=${encodeTactic(players, ball)}`;
+  return `${origin}${path}?t=${encodeTactic(players, ball, steps)}`;
 }

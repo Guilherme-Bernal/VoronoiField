@@ -87,6 +87,19 @@ describe("compartilhar tatica", () => {
     expect(readSharedTactic(`?t=${token}`)?.players).toHaveLength(22);
   });
 
+  it("leva os passos da jogada no link", () => {
+    const players = createMatch("4-4-2", "4-3-3");
+    const moved = players.map((q) => (q.id === "A9" ? { ...q, x: 0.7 } : q));
+    const token = encodeTactic(players, "A4", [
+      { players, ball: "A4" },
+      { players: moved, ball: "A9" },
+    ]);
+    const back = decodeTactic(token);
+    expect(back?.steps).toHaveLength(2);
+    expect(back?.steps[1].ball).toBe("A9");
+    expect(back?.steps[1].players.find((q) => q.id === "A9")?.x).toBeCloseTo(0.7, 2);
+  });
+
   it("rejeita lixo", () => {
     expect(decodeTactic("")).toBeNull();
     expect(decodeTactic("nao-e-base64!!")).toBeNull();

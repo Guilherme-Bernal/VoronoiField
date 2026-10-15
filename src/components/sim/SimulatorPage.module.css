@@ -305,3 +305,35 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.howto {
+  margin: 0 0 0.75rem;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--chalk-300);
+}
+
+.stepChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.chip {
+  min-width: 2rem;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--chalk-050);
+  background: rgba(244, 247, 243, 0.08);
+  border: 1px solid var(--line-020);
+}
+
+.chip:disabled,
+.toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

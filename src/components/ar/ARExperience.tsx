@@ -63,7 +63,7 @@ export function ARExperience() {
   // Tatica compartilhada por link (?t=...) e limpeza ao sair.
   useEffect(() => {
     const shared = readSharedTactic(search);
-    if (shared) loadTactic(shared.players, shared.ball);
+    if (shared) loadTactic(shared.players, shared.ball, shared.steps);
     return () => stopPlay();
   }, [search, loadTactic, stopPlay]);
 

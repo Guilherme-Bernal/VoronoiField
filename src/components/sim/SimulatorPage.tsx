@@ -32,6 +32,12 @@ export function SimulatorPage() {
   const startPlay = useTacticalStore((s) => s.startPlay);
   const stopPlay = useTacticalStore((s) => s.stopPlay);
   const passBall = useTacticalStore((s) => s.passBall);
+  const steps = useTacticalStore((s) => s.steps);
+  const addStep = useTacticalStore((s) => s.addStep);
+  const removeLastStep = useTacticalStore((s) => s.removeLastStep);
+  const clearSteps = useTacticalStore((s) => s.clearSteps);
+  const goToStep = useTacticalStore((s) => s.goToStep);
+  const playSteps = useTacticalStore((s) => s.playSteps);
   const { search } = useLocation();
 
   const [formationA, setFormationA] = useState<FormationName>("4-4-2");
@@ -42,7 +48,7 @@ export function SimulatorPage() {
 
   // Uma tatica vinda de link (?t=...) vale ate o usuario trocar a formacao.
   useEffect(() => {
-    if (shared) loadTactic(shared.players, shared.ball);
+    if (shared) loadTactic(shared.players, shared.ball, shared.steps);
     else loadMatch(formationA, formationB);
   }, [shared, formationA, formationB, loadMatch, loadTactic]);
 
@@ -62,7 +68,7 @@ export function SimulatorPage() {
     loadMatch(formationA, formationB);
   };
   const share = async () => {
-    const ok = await copyText(buildShareUrl("/sim", players, ballCarrierId));
+    const ok = await copyText(buildShareUrl("/sim", players, ballCarrierId, steps));
     setCopied(ok);
     window.setTimeout(() => setCopied(false), 2000);
   };
@@ -117,7 +123,7 @@ export function SimulatorPage() {
         </Link>
         <h1 className={styles.title}>Simulador tático</h1>
         <Link
-          to={`/ar?t=${encodeTactic(players, ballCarrierId)}`}
+          to={`/ar?t=${encodeTactic(players, ballCarrierId, steps)}`}
           className={styles.arLink}
         >
           Abrir em AR
@@ -329,7 +335,7 @@ export function SimulatorPage() {
                 aria-pressed={playing}
                 onClick={playing ? stopPlay : startPlay}
               >
-                {playing ? "Parar" : "Jogar"}
+                {playing ? "Parar" : "Jogada automática"}
               </button>
               <button
                 type="button"
@@ -351,7 +357,72 @@ export function SimulatorPage() {
               {showOffside && offside?.offsideIds.length
                 ? `Impedimento: ${offside.offsideIds.join(", ")}.`
                 : ""}{" "}
-              Quem você arrasta fica com a bola.
+              Toque num jogador (sem arrastar) para dar a bola a ele.
+            </p>
+          </section>
+
+          <section className={styles.block}>
+            <h2 className={styles.blockTitle}>Prancheta de jogadas</h2>
+            <ol className={styles.howto}>
+              <li>Arraste os jogadores para a posição inicial e toque em quem está com a bola.</li>
+              <li>Clique em “Salvar passo”.</li>
+              <li>Mova os jogadores (e a bola) para o próximo momento e salve de novo.</li>
+              <li>Com 2 ou mais passos, clique em “Reproduzir”.</li>
+            </ol>
+            <div className={styles.buttons}>
+              <button
+                type="button"
+                className={styles.toggle}
+                onClick={addStep}
+                disabled={playing || steps.length >= 12}
+              >
+                Salvar passo
+              </button>
+              <button
+                type="button"
+                className={`${styles.toggle} ${playing ? styles.toggleActive : ""}`}
+                onClick={playing ? stopPlay : playSteps}
+                disabled={!playing && steps.length < 2}
+              >
+                {playing ? "Parar" : "Reproduzir"}
+              </button>
+              <button
+                type="button"
+                className={styles.reset}
+                onClick={removeLastStep}
+                disabled={playing || steps.length === 0}
+              >
+                Desfazer
+              </button>
+              <button
+                type="button"
+                className={styles.reset}
+                onClick={clearSteps}
+                disabled={steps.length === 0}
+              >
+                Limpar
+              </button>
+            </div>
+            {steps.length > 0 && (
+              <div className={styles.stepChips} aria-label="Passos salvos">
+                {steps.map((frame, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className={styles.chip}
+                    onClick={() => goToStep(index)}
+                    disabled={playing}
+                    title={`Voltar ao passo ${index + 1} (bola com ${frame.ball ?? "-"})`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className={styles.hint}>
+              {steps.length === 0
+                ? "Nenhum passo salvo. Compartilhar leva a jogada junto (também para o AR)."
+                : `${steps.length} passo(s) salvo(s). Clique no número para voltar a ele.`}
             </p>
           </section>
         </aside>

@@ -27,13 +27,45 @@ describe("jogada animada", () => {
     expect(store.getState().ballCarrierId).not.toBe(carrierBefore);
   });
 
-  it("arrastar um jogador interrompe a jogada", () => {
+  it("arrastar interrompe a jogada sem mudar a bola; um toque passa a bola", () => {
     const store = useTacticalStore;
+    const carrier = store.getState().ballCarrierId;
     store.getState().startPlay();
     vi.advanceTimersByTime(300);
     store.getState().startDrag("B5");
     expect(store.getState().playing).toBe(false);
-    expect(store.getState().ballCarrierId).toBe("B5");
+    store.getState().setPlayerPosition("B5", 0.5, 0.5);
+    store.getState().endDrag();
+    expect(store.getState().ballCarrierId).not.toBe("B5");
+    expect(carrier).not.toBe("B5");
+
+    store.getState().startDrag("B6");
+    store.getState().endDrag(); // sem mover = toque
+    expect(store.getState().ballCarrierId).toBe("B6");
+  });
+
+  it("prancheta: salva passos, reproduz ate o ultimo e limpa", () => {
+    const store = useTacticalStore;
+    const s = store.getState();
+    s.addStep();
+    s.setPlayerPosition("A9", 0.7, 0.3);
+    s.setBallCarrier("A9");
+    s.addStep();
+    expect(store.getState().steps).toHaveLength(2);
+
+    store.getState().playSteps();
+    expect(store.getState().playing).toBe(true);
+    vi.advanceTimersByTime(3000);
+    expect(store.getState().playing).toBe(false);
+    const a9 = store.getState().players.find((p) => p.id === "A9")!;
+    expect(a9.x).toBeCloseTo(0.7, 2);
+    expect(store.getState().ballCarrierId).toBe("A9");
+
+    store.getState().goToStep(0);
+    expect(store.getState().players.find((p) => p.id === "A9")!.x).not.toBeCloseTo(0.7, 2);
+
+    store.getState().clearSteps();
+    expect(store.getState().steps).toHaveLength(0);
   });
 
   it("passBall entrega a bola ao melhor receptor", () => {

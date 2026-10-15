@@ -15,13 +15,15 @@ export function HUD() {
   const togglePasses = useTacticalStore((s) => s.togglePasses);
   const toggleOffside = useTacticalStore((s) => s.toggleOffside);
   const startPlay = useTacticalStore((s) => s.startPlay);
+  const playSteps = useTacticalStore((s) => s.playSteps);
+  const hasSteps = useTacticalStore((s) => s.steps.length >= 2);
   const stopPlay = useTacticalStore((s) => s.stopPlay);
   const resetFormation = useTacticalStore((s) => s.resetFormation);
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
-    const { players, ballCarrierId } = useTacticalStore.getState();
-    const ok = await copyText(buildShareUrl("/ar", players, ballCarrierId));
+    const { players, ballCarrierId, steps } = useTacticalStore.getState();
+    const ok = await copyText(buildShareUrl("/ar", players, ballCarrierId, steps));
     setCopied(ok);
     window.setTimeout(() => setCopied(false), 2000);
   };
@@ -60,7 +62,7 @@ export function HUD() {
           <button
             type="button"
             className={`${styles.toggle} ${playing ? styles.toggleActive : ""}`}
-            onClick={playing ? stopPlay : startPlay}
+            onClick={playing ? stopPlay : hasSteps ? playSteps : startPlay}
           >
             {playing ? "Parar" : "Jogar"}
           </button>

@@ -8,6 +8,12 @@ import {
 const clamp = (value: number, min = 0.03, max = 0.97) =>
   Math.min(max, Math.max(min, value));
 
+/** Um passo salvo na prancheta: posicoes de todos os jogadores e quem esta com a bola. */
+export interface PlayFrame {
+  players: Player[];
+  ball: string | null;
+}
+
 export interface PlayStep {
   /** Posicoes finais do passo, na mesma ordem de `players`. */
   targets: Player[];
