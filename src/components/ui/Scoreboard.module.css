@@ -1,0 +1,47 @@
+.board {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: min(15rem, 46vw);
+  padding: 0.7rem 0.8rem;
+  background: rgba(8, 25, 18, 0.82);
+  border: 1px solid var(--line-020);
+  font-size: 0.78rem;
+  color: var(--chalk-050);
+}
+
+.meter {
+  display: flex;
+  height: 1.3rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.meterA,
+.meterB {
+  display: flex;
+  align-items: center;
+  padding: 0 0.4rem;
+  transition: width 0.25s ease;
+  min-width: 0;
+}
+
+.meterA {
+  background: #2f6fed;
+}
+
+.meterB {
+  background: #e0483e;
+  justify-content: flex-end;
+}
+
+.line {
+  margin: 0.15rem 0 0;
+}
+
+.label {
+  color: var(--chalk-300);
+  margin-right: 0.3rem;
+}

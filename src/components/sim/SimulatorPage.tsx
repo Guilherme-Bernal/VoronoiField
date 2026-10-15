@@ -1,10 +1,9 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  computePassingLines,
-  computeTeamControl,
-  computeVoronoiZones,
-} from "../../tactics/engine";
+import { Link, useLocation } from "react-router-dom";
+import { copyText } from "../../lib/clipboard";
+import { analyzeTactic } from "../../tactics/analysis";
+import { buildShareUrl, encodeTactic, readSharedTactic } from "../../tactics/share";
+import { computePassingLines, computeVoronoiZones } from "../../tactics/engine";
 import { FORMATION_NAMES, type FormationName } from "../../tactics/formations";
 import { useTacticalStore } from "../../state/tacticalStore";
 import styles from "./SimulatorPage.module.css";
@@ -25,19 +24,54 @@ export function SimulatorPage() {
   const togglePasses = useTacticalStore((s) => s.togglePasses);
   const loadMatch = useTacticalStore((s) => s.loadMatch);
   const resetFormation = useTacticalStore((s) => s.resetFormation);
+  const loadTactic = useTacticalStore((s) => s.loadTactic);
+  const ballCarrierId = useTacticalStore((s) => s.ballCarrierId);
+  const showOffside = useTacticalStore((s) => s.showOffside);
+  const playing = useTacticalStore((s) => s.playing);
+  const toggleOffside = useTacticalStore((s) => s.toggleOffside);
+  const startPlay = useTacticalStore((s) => s.startPlay);
+  const stopPlay = useTacticalStore((s) => s.stopPlay);
+  const passBall = useTacticalStore((s) => s.passBall);
+  const { search } = useLocation();
 
   const [formationA, setFormationA] = useState<FormationName>("4-4-2");
   const [formationB, setFormationB] = useState<FormationName>("4-3-3");
+  const [shared, setShared] = useState(() => readSharedTactic(search));
+  const [copied, setCopied] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // Uma tatica vinda de link (?t=...) vale ate o usuario trocar a formacao.
   useEffect(() => {
-    loadMatch(formationA, formationB);
-  }, [formationA, formationB, loadMatch]);
+    if (shared) loadTactic(shared.players, shared.ball);
+    else loadMatch(formationA, formationB);
+  }, [shared, formationA, formationB, loadMatch, loadTactic]);
 
   useEffect(() => resetFormation, [resetFormation]);
+  useEffect(() => stopPlay, [stopPlay]);
+
+  const chooseFormationA = (value: FormationName) => {
+    setShared(null);
+    setFormationA(value);
+  };
+  const chooseFormationB = (value: FormationName) => {
+    setShared(null);
+    setFormationB(value);
+  };
+  const restart = () => {
+    setShared(null);
+    loadMatch(formationA, formationB);
+  };
+  const share = async () => {
+    const ok = await copyText(buildShareUrl("/sim", players, ballCarrierId));
+    setCopied(ok);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
 
   const zones = useMemo(() => computeVoronoiZones(players), [players]);
-  const control = useMemo(() => computeTeamControl(zones), [zones]);
+  const { control, bestPass, offside } = useMemo(
+    () => analyzeTactic(players, ballCarrierId, showOffside),
+    [players, ballCarrierId, showOffside]
+  );
   const lines = useMemo(
     () => computePassingLines(players, 0.04, MAX_PASS_DISTANCE),
     [players]
@@ -82,7 +116,10 @@ export function SimulatorPage() {
           ← Início
         </Link>
         <h1 className={styles.title}>Simulador tático</h1>
-        <Link to="/ar" className={styles.arLink}>
+        <Link
+          to={`/ar?t=${encodeTactic(players, ballCarrierId)}`}
+          className={styles.arLink}
+        >
           Abrir em AR
         </Link>
       </header>
@@ -131,6 +168,35 @@ export function SimulatorPage() {
                 );
               })}
 
+            {showPasses && bestPass && byId.get(bestPass.from) && byId.get(bestPass.to) && (
+              <line
+                className={styles.passBest}
+                x1={byId.get(bestPass.from)!.x * PITCH_W}
+                y1={byId.get(bestPass.from)!.y * PITCH_H}
+                x2={byId.get(bestPass.to)!.x * PITCH_W}
+                y2={byId.get(bestPass.to)!.y * PITCH_H}
+              />
+            )}
+
+            {showOffside && offside && (
+              <g>
+                <line
+                  className={styles.offsideLine}
+                  x1={offside.x * PITCH_W}
+                  y1={0.5}
+                  x2={offside.x * PITCH_W}
+                  y2={PITCH_H - 0.5}
+                />
+                <text
+                  className={styles.offsideText}
+                  x={offside.x * PITCH_W - 0.8}
+                  y={3}
+                >
+                  Impedimento
+                </text>
+              </g>
+            )}
+
             {players.map((p) => (
               <g
                 key={p.id}
@@ -140,6 +206,9 @@ export function SimulatorPage() {
                 transform={`translate(${p.x * PITCH_W} ${p.y * PITCH_H})`}
                 onPointerDown={(e) => handlePointerDown(e, p.id)}
               >
+                {showOffside && offside?.offsideIds.includes(p.id) && (
+                  <circle r={3.6} className={styles.offsideRing} />
+                )}
                 <circle
                   r={2.6}
                   className={p.team === "A" ? styles.tokenA : styles.tokenB}
@@ -149,6 +218,17 @@ export function SimulatorPage() {
                 </text>
               </g>
             ))}
+            {ballCarrierId && byId.get(ballCarrierId) && (
+              <circle
+                className={styles.ball}
+                r={1.1}
+                style={{
+                  transform: `translate(${byId.get(ballCarrierId)!.x * PITCH_W + 2.6}px, ${
+                    byId.get(ballCarrierId)!.y * PITCH_H + 1.8
+                  }px)`,
+                }}
+              />
+            )}
           </svg>
         </div>
 
@@ -179,7 +259,7 @@ export function SimulatorPage() {
               <span className={styles.swatchA} /> Time azul
               <select
                 value={formationA}
-                onChange={(e) => setFormationA(e.target.value as FormationName)}
+                onChange={(e) => chooseFormationA(e.target.value as FormationName)}
               >
                 {FORMATION_NAMES.map((name) => (
                   <option key={name}>{name}</option>
@@ -190,7 +270,7 @@ export function SimulatorPage() {
               <span className={styles.swatchB} /> Time vermelho
               <select
                 value={formationB}
-                onChange={(e) => setFormationB(e.target.value as FormationName)}
+                onChange={(e) => chooseFormationB(e.target.value as FormationName)}
               >
                 {FORMATION_NAMES.map((name) => (
                   <option key={name}>{name}</option>
@@ -220,8 +300,16 @@ export function SimulatorPage() {
               </button>
               <button
                 type="button"
+                className={`${styles.toggle} ${showOffside ? styles.toggleActive : ""}`}
+                aria-pressed={showOffside}
+                onClick={toggleOffside}
+              >
+                Impedimento
+              </button>
+              <button
+                type="button"
                 className={styles.reset}
-                onClick={() => loadMatch(formationA, formationB)}
+                onClick={restart}
               >
                 Reiniciar
               </button>
@@ -229,6 +317,41 @@ export function SimulatorPage() {
             <p className={styles.hint}>
               Linhas amarelas são passes livres; cinzas estão bloqueadas por um
               adversário. Arraste qualquer jogador.
+            </p>
+          </section>
+
+          <section className={styles.block}>
+            <h2 className={styles.blockTitle}>Jogada</h2>
+            <div className={styles.buttons}>
+              <button
+                type="button"
+                className={`${styles.toggle} ${playing ? styles.toggleActive : ""}`}
+                aria-pressed={playing}
+                onClick={playing ? stopPlay : startPlay}
+              >
+                {playing ? "Parar" : "Jogar"}
+              </button>
+              <button
+                type="button"
+                className={styles.reset}
+                onClick={passBall}
+                disabled={!bestPass || playing}
+              >
+                Passar
+              </button>
+              <button type="button" className={styles.reset} onClick={share}>
+                {copied ? "Link copiado" : "Compartilhar"}
+              </button>
+            </div>
+            <p className={styles.hint}>
+              Bola com {ballCarrierId ?? "-"}.{" "}
+              {bestPass
+                ? `Melhor passe (verde): ${bestPass.from} → ${bestPass.to}.`
+                : "Nenhum passe livre."}{" "}
+              {showOffside && offside?.offsideIds.length
+                ? `Impedimento: ${offside.offsideIds.join(", ")}.`
+                : ""}{" "}
+              Quem você arrasta fica com a bola.
             </p>
           </section>
         </aside>

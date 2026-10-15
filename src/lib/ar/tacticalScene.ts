@@ -1,5 +1,7 @@
 ﻿import * as THREE from "three";
 import {
+  computeBestPass,
+  computeOffside,
   computePassingLines,
   computeVoronoiZones,
   polygonArea,
@@ -13,6 +15,8 @@ const TEAM_COLOR: Record<Team, number> = {
 };
 const PASS_COLOR = 0xf2b705;
 const BLOCKED_COLOR = 0x9aa0a6;
+const BEST_COLOR = 0x5dffb0;
+const OFFSIDE_COLOR = 0xff5a4d;
 
 const GLIDE_SPEED = 16;
 const REVEAL_MS = 1100;
@@ -24,6 +28,9 @@ export interface TacticalGroupOptions {
   draggingId?: string | null;
   /** Mostra o numero flutuando acima de cada jogador. */
   labels?: boolean;
+  /** Portador da bola: habilita bola, melhor passe e impedimento. */
+  ballCarrierId?: string | null;
+  showOffside?: boolean;
 }
 
 interface PlayerVisual {
@@ -52,6 +59,8 @@ interface SceneState {
   lastTime: number | null;
   revealStart: number | null;
   pulses: Pulse[];
+  ball: THREE.Mesh;
+  ballDisplay: { x: number; y: number } | null;
   labelTextures: Map<string, THREE.CanvasTexture>;
   teamMaterials: Record<Team, THREE.MeshStandardMaterial>;
   bodyGeometry: THREE.BufferGeometry;
@@ -137,6 +146,20 @@ export function createTacticalGroup(): TacticalGroup {
   pulsesGroup.name = "pulses";
   const tokensGroup = new THREE.Group();
   tokensGroup.name = "tokens";
+  const offsideGroup = new THREE.Group();
+  offsideGroup.name = "offside";
+
+  const ball = new THREE.Mesh(
+    new THREE.SphereGeometry(0.013, 20, 14),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.35,
+      roughness: 0.4,
+    })
+  );
+  ball.name = "ball";
+  ball.visible = false;
 
   const ambient = new THREE.AmbientLight(0xffffff, 1.4);
   const sun = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -164,7 +187,16 @@ export function createTacticalGroup(): TacticalGroup {
   );
   border.name = "border";
 
-  group.add(ground, border, zonesGroup, linesGroup, pulsesGroup, tokensGroup);
+  group.add(
+    ground,
+    border,
+    zonesGroup,
+    linesGroup,
+    pulsesGroup,
+    offsideGroup,
+    tokensGroup,
+    ball
+  );
 
   const teamMaterial = (color: number) =>
     new THREE.MeshStandardMaterial({
@@ -182,6 +214,8 @@ export function createTacticalGroup(): TacticalGroup {
     lastTime: null,
     revealStart: null,
     pulses: [],
+    ball,
+    ballDisplay: null,
     labelTextures: new Map(),
     teamMaterials: {
       A: teamMaterial(TEAM_COLOR.A),
@@ -357,7 +391,9 @@ function rebuildOverlays(tactical: TacticalGroup) {
   const zonesGroup = getGroup(tactical, "zones");
   const linesGroup = getGroup(tactical, "lines");
   const pulsesGroup = getGroup(tactical, "pulses");
+  const offsideGroup = getGroup(tactical, "offside");
 
+  clearGroup(offsideGroup);
   clearGroup(zonesGroup);
   clearGroup(linesGroup);
   clearGroup(pulsesGroup);
@@ -475,6 +511,90 @@ function rebuildOverlays(tactical: TacticalGroup) {
       s.pulses.push({ mesh: pulse, curve, phase: (index * 0.37) % 1 });
     });
   }
+
+  const carrierId = s.options.ballCarrierId ?? null;
+  const offsideOn = s.options.showOffside ?? true;
+
+  if (s.options.showPasses && carrierId) {
+    const best = computeBestPass(current, carrierId, { offside: offsideOn });
+    const from = current.find((p) => p.id === best?.from);
+    const to = current.find((p) => p.id === best?.to);
+    if (best && from && to) {
+      const [fx, fy] = toWorld(from.x, from.y);
+      const [tx, ty] = toWorld(to.x, to.y);
+      const dist = Math.hypot(tx - fx, ty - fy);
+      const curve = new THREE.QuadraticBezierCurve3(
+        new THREE.Vector3(fx, fy, 0.035),
+        new THREE.Vector3((fx + tx) / 2, (fy + ty) / 2, 0.035 + Math.min(dist, 0.6) * 0.6),
+        new THREE.Vector3(tx, ty, 0.035)
+      );
+      linesGroup.add(
+        new THREE.Mesh(
+          new THREE.TubeGeometry(curve, 28, 0.0068, 8, false),
+          new THREE.MeshBasicMaterial({ color: BEST_COLOR })
+        )
+      );
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.04, 0.05, 40),
+        new THREE.MeshBasicMaterial({
+          color: BEST_COLOR,
+          transparent: true,
+          opacity: 0.95,
+          side: THREE.DoubleSide,
+        })
+      );
+      ring.position.set(tx, ty, 0.002);
+      linesGroup.add(ring);
+    }
+  }
+
+  const offside = offsideOn && carrierId ? computeOffside(current, carrierId) : null;
+  if (offside) {
+    const [lx] = toWorld(offside.x, 0);
+    const height = 0.1;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(
+        [lx, -0.5, 0, lx, 0.5, 0, lx, 0.5, height, lx, -0.5, height],
+        3
+      )
+    );
+    geometry.setIndex([0, 1, 2, 0, 2, 3]);
+    offsideGroup.add(
+      new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          color: OFFSIDE_COLOR,
+          transparent: true,
+          opacity: 0.2,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        })
+      ),
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(lx, -0.5, height),
+          new THREE.Vector3(lx, 0.5, height),
+        ]),
+        new THREE.LineBasicMaterial({ color: OFFSIDE_COLOR })
+      )
+    );
+    offside.offsideIds.forEach((id) => {
+      const p = current.find((q) => q.id === id);
+      if (!p) return;
+      const [px, py] = toWorld(p.x, p.y);
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.036, 0.046, 32),
+        new THREE.MeshBasicMaterial({
+          color: OFFSIDE_COLOR,
+          side: THREE.DoubleSide,
+        })
+      );
+      ring.position.set(px, py, 0.003);
+      offsideGroup.add(ring);
+    });
+  }
 }
 
 /**
@@ -553,6 +673,26 @@ export function tickTacticalGroup(
   getGroup(tactical, "zones").scale.z = zScale;
   getGroup(tactical, "lines").scale.z = zScale;
   getGroup(tactical, "pulses").scale.z = zScale;
+  getGroup(tactical, "offside").scale.z = zScale;
+
+  // Bola: acompanha o portador, com um arco curto quando viaja num passe.
+  const carrier = s.options.ballCarrierId
+    ? s.visuals.get(s.options.ballCarrierId)
+    : undefined;
+  s.ball.visible = !!carrier;
+  if (carrier) {
+    const goal = { x: carrier.display.x + 0.022, y: carrier.display.y + 0.012 };
+    if (!s.ballDisplay) {
+      s.ballDisplay = { ...goal };
+    } else {
+      const kb = 1 - Math.exp(-dt * 9);
+      s.ballDisplay.x += (goal.x - s.ballDisplay.x) * kb;
+      s.ballDisplay.y += (goal.y - s.ballDisplay.y) * kb;
+    }
+    const remaining = Math.hypot(goal.x - s.ballDisplay.x, goal.y - s.ballDisplay.y);
+    const [bx, by] = toWorld(s.ballDisplay.x, s.ballDisplay.y);
+    s.ball.position.set(bx, by, 0.014 + Math.min(remaining, 0.4) * 0.3);
+  }
 
   if (moving) rebuildOverlays(tactical);
 

@@ -122,3 +122,133 @@ export function computeTeamControl(zones: VoronoiZone[]): TeamControl {
   if (all === 0) return { A: 0.5, B: 0.5 };
   return { A: totals.A / all, B: totals.B / all };
 }
+
+/* ------------------------------------------------------------------ */
+/* Impedimento e melhor passe                                          */
+/* ------------------------------------------------------------------ */
+
+/** Direcao de ataque no eixo X: o time A ataca para a direita, o B para a esquerda. */
+export function attackDirection(team: Team): 1 | -1 {
+  return team === "A" ? 1 : -1;
+}
+
+export interface OffsideInfo {
+  /** Time que esta com a bola (atacando). */
+  team: Team;
+  /** Posicao X (0..1) da linha de impedimento. */
+  x: number;
+  /** Atacantes em posicao irregular. */
+  offsideIds: string[];
+}
+
+/**
+ * Linha de impedimento: penultimo defensor ou a bola, o que estiver mais
+ * adiantado. So ha impedimento na metade de campo adversaria.
+ */
+export function computeOffside(
+  players: Player[],
+  carrierId: string | null | undefined
+): OffsideInfo | null {
+  const carrier = players.find((p) => p.id === carrierId);
+  if (!carrier) return null;
+  const dir = attackDirection(carrier.team);
+
+  const defenders = players
+    .filter((p) => p.team !== carrier.team)
+    .sort((a, b) => (b.x - a.x) * dir);
+  if (defenders.length < 2) return null;
+
+  const secondLast = defenders[1].x;
+  const x = dir === 1 ? Math.max(secondLast, carrier.x) : Math.min(secondLast, carrier.x);
+
+  const offsideIds = players
+    .filter(
+      (p) =>
+        p.team === carrier.team &&
+        p.id !== carrier.id &&
+        (p.x - x) * dir > 0.005 &&
+        (p.x - 0.5) * dir > 0
+    )
+    .map((p) => p.id);
+
+  return { team: carrier.team, x, offsideIds };
+}
+
+export interface BestPass {
+  from: string;
+  to: string;
+  score: number;
+}
+
+export interface BestPassOptions {
+  maxDistance?: number;
+  interceptRadius?: number;
+  /** Ignora receptores em impedimento. */
+  offside?: boolean;
+}
+
+function distanceToSegment(o: Player, a: Player, b: Player): number {
+  const abx = b.x - a.x;
+  const aby = b.y - a.y;
+  const lenSq = abx * abx + aby * aby;
+  if (lenSq === 0) return Math.hypot(o.x - a.x, o.y - a.y);
+  const t = Math.max(
+    0,
+    Math.min(1, ((o.x - a.x) * abx + (o.y - a.y) * aby) / lenSq)
+  );
+  return Math.hypot(o.x - (a.x + t * abx), o.y - (a.y + t * aby));
+}
+
+/**
+ * Melhor passe do portador da bola: entre os passes livres (sem adversario no
+ * caminho), pondera folga na linha de passe, espaco do receptor, ganho de
+ * campo e distancia curta.
+ */
+export function computeBestPass(
+  players: Player[],
+  carrierId: string | null | undefined,
+  options: BestPassOptions = {}
+): BestPass | null {
+  const { maxDistance = 0.4, interceptRadius = 0.06, offside = true } = options;
+  const carrier = players.find((p) => p.id === carrierId);
+  if (!carrier) return null;
+
+  const dir = attackDirection(carrier.team);
+  const opponents = players.filter((p) => p.team !== carrier.team);
+  const offsideIds = new Set(
+    offside ? (computeOffside(players, carrierId)?.offsideIds ?? []) : []
+  );
+
+  let best: BestPass | null = null;
+
+  for (const mate of players) {
+    if (mate.team !== carrier.team || mate.id === carrier.id) continue;
+    if (offsideIds.has(mate.id)) continue;
+
+    const dist = Math.hypot(mate.x - carrier.x, mate.y - carrier.y);
+    if (dist === 0 || dist > maxDistance) continue;
+    if (opponents.some((o) => isNearSegment(o, carrier, mate, interceptRadius))) {
+      continue;
+    }
+
+    const clearance = Math.min(
+      1,
+      Math.min(...opponents.map((o) => distanceToSegment(o, carrier, mate)), 0.15) /
+        0.15
+    );
+    const space = Math.min(
+      1,
+      Math.min(...opponents.map((o) => Math.hypot(o.x - mate.x, o.y - mate.y)), 0.2) /
+        0.2
+    );
+    const forward = Math.max(-1, Math.min(1, ((mate.x - carrier.x) * dir) / 0.3));
+    const short = 1 - dist / maxDistance;
+
+    const score = 0.35 * clearance + 0.3 * space + 0.25 * forward + 0.1 * short;
+    if (!best || score > best.score) {
+      best = { from: carrier.id, to: mate.id, score };
+    }
+  }
+
+  return best;
+}

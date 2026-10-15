@@ -6,7 +6,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
   padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(8, 25, 18, 0) 0%, rgba(8, 25, 18, 0.85) 45%);
 }
@@ -33,6 +34,7 @@
 
 .controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 

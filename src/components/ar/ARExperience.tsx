@@ -8,7 +8,8 @@ import {
   updateTacticalGroup,
 } from "../../lib/ar/tacticalScene";
 import { useTacticalStore } from "../../state/tacticalStore";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { readSharedTactic } from "../../tactics/share";
 import { useCameras } from "../../lib/ar/useCameras";
 import { CameraPicker } from "./CameraPicker";
 import { ScanFrame } from "./ScanFrame";
@@ -24,7 +25,7 @@ const ERROR_COPY = {
   },
   "script-missing": {
     title: "Biblioteca de AR não carregou",
-    text: "O script do MindAR (CDN) não foi carregado. Verifique a conexão e recarregue.",
+    text: "O módulo de AR não carregou. Recarregue a página; se persistir, use outro navegador.",
   },
   camera: {
     title: "Não foi possível abrir a câmera",
@@ -49,10 +50,22 @@ export function ARExperience() {
   const showZones = useTacticalStore((s) => s.showZones);
   const showPasses = useTacticalStore((s) => s.showPasses);
   const draggingId = useTacticalStore((s) => s.draggingId);
+  const ballCarrierId = useTacticalStore((s) => s.ballCarrierId);
+  const showOffside = useTacticalStore((s) => s.showOffside);
+  const loadTactic = useTacticalStore((s) => s.loadTactic);
+  const stopPlay = useTacticalStore((s) => s.stopPlay);
+  const { search } = useLocation();
   const setPlayerPosition = useTacticalStore((s) => s.setPlayerPosition);
   const startDrag = useTacticalStore((s) => s.startDrag);
   const endDrag = useTacticalStore((s) => s.endDrag);
   const setTargetFound = useTacticalStore((s) => s.setTargetFound);
+
+  // Tatica compartilhada por link (?t=...) e limpeza ao sair.
+  useEffect(() => {
+    const shared = readSharedTactic(search);
+    if (shared) loadTactic(shared.players, shared.ball);
+    return () => stopPlay();
+  }, [search, loadTactic, stopPlay]);
 
   useEffect(() => {
     setTargetFound(targetFound);
@@ -76,8 +89,10 @@ export function ARExperience() {
       showPasses,
       draggingId,
       labels: true,
+      ballCarrierId,
+      showOffside,
     });
-  }, [players, showZones, showPasses, draggingId]);
+  }, [players, showZones, showPasses, draggingId, ballCarrierId, showOffside]);
 
   // Animacoes (deslize dos jogadores, pulsos nos passes, entrada).
   useEffect(() => {

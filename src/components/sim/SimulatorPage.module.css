@@ -263,3 +263,45 @@
 .reset {
   color: var(--chalk-300);
 }
+
+.passBest {
+  stroke: #5dffb0;
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.offsideLine {
+  stroke: #ff5a4d;
+  stroke-width: 0.35;
+  stroke-dasharray: 1.6 1.2;
+  pointer-events: none;
+}
+
+.offsideText {
+  fill: #ff5a4d;
+  font-size: 2.2px;
+  font-weight: 600;
+  text-anchor: end;
+  pointer-events: none;
+}
+
+.offsideRing {
+  fill: none;
+  stroke: #ff5a4d;
+  stroke-width: 0.5;
+  pointer-events: none;
+}
+
+.ball {
+  fill: #fff;
+  stroke: #081912;
+  stroke-width: 0.3;
+  pointer-events: none;
+  transition: transform 0.45s ease;
+}
+
+.reset:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
