@@ -1,0 +1,30 @@
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-align: left;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--chalk-050);
+  background: transparent;
+  border: 1px solid var(--line-020);
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+}
+
+.option span {
+  color: var(--chalk-300);
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+
+.active {
+  border-color: #f2b705;
+  background: rgba(242, 183, 5, 0.14);
+}
