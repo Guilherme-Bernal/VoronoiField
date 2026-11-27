@@ -208,6 +208,9 @@ export function MatchReportPage() {
         </Link>
         <h1 className={styles.title}>Leitura de campo</h1>
         <div className={styles.actions}>
+          <Link to="/importar" className={styles.secondary}>
+            Importar por foto
+          </Link>
           <button type="button" className={styles.secondary} onClick={openInSimulator}>
             Abrir no simulador
           </button>

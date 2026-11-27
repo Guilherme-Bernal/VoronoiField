@@ -4,6 +4,7 @@ import { HomeScreen } from "./components/ui/HomeScreen";
 import { MarkerPage } from "./components/ui/MarkerPage";
 import { NotFound } from "./components/ui/NotFound";
 import { MatchReportPage } from "./match/MatchReportPage";
+import { PhotoImportPage } from "./vision/PhotoImportPage";
 
 const ARExperience = lazy(() =>
   import("./components/ar/ARExperience").then((m) => ({ default: m.ARExperience }))
@@ -21,6 +22,7 @@ function App() {
           <Route path="/ar" element={<ARExperience />} />
           <Route path="/sim" element={<SimulatorPage />} />
           <Route path="/leitura" element={<MatchReportPage />} />
+          <Route path="/importar" element={<PhotoImportPage />} />
           <Route path="/marcador" element={<MarkerPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

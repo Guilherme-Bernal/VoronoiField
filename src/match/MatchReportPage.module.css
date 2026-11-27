@@ -7,7 +7,7 @@
 .primary, .secondary { font-weight: 600; font-size: 0.9rem; padding: 0.6rem 1.1rem; }
 .primary { background: var(--signal-amber); color: var(--pitch-950); }
 .primary:disabled { opacity: 0.6; cursor: progress; }
-.secondary { background: transparent; color: var(--chalk-050); border: 1px solid var(--line-020); }
+.secondary { text-decoration: none; display: inline-flex; align-items: center; background: transparent; color: var(--chalk-050); border: 1px solid var(--line-020); }
 .primary:focus-visible, .secondary:focus-visible, .link:focus-visible { outline: 2px solid var(--signal-amber); outline-offset: 2px; }
 .error { color: #ffb4ae; margin: 0 0 1rem; }
 .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
