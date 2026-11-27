@@ -1,10 +1,10 @@
-import { useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { computeVoronoiZones } from "../tactics/engine";
 import { FORMATION_NAMES, type FormationName } from "../tactics/formations";
 import { encodeTactic } from "../tactics/share";
 import { detectPlayers, type DetectedPoint, type PitchRect } from "./detectPlayers";
-import { buildLineup, toField } from "./lineup";
+import { buildLineup, guessFormation, toField } from "./lineup";
 import styles from "./PhotoImportPage.module.css";
 
 const MAX_SIDE = 720;
@@ -18,6 +18,18 @@ interface Loaded {
 }
 
 type Orientation = "auto" | "vertical" | "horizontal";
+
+interface LiveInfo {
+  w: number;
+  h: number;
+  pitch: PitchRect;
+  points: DetectedPoint[];
+  stable: boolean;
+  formation: string | null;
+}
+
+const LIVE_SIDE = 480;
+const LIVE_EVERY_MS = 400;
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -40,6 +52,93 @@ export function PhotoImportPage() {
   const [side, setSide] = useState<"A" | "B">("A");
   const [opponent, setOpponent] = useState<FormationName>("4-4-2");
   const [snap, setSnap] = useState(false);
+  const [live, setLive] = useState(false);
+  const [liveInfo, setLiveInfo] = useState<LiveInfo | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const history = useRef<number[]>([]);
+
+  // Camera ao vivo: le um quadro a cada 400 ms e procura os jogadores.
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    let stream: MediaStream | undefined;
+    history.current = [];
+
+    const tick = () => {
+      const video = videoRef.current;
+      if (!video || video.videoWidth === 0) return;
+      const scale = Math.min(1, LIVE_SIDE / Math.max(video.videoWidth, video.videoHeight));
+      const w = Math.round(video.videoWidth * scale);
+      const h = Math.round(video.videoHeight * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, w, h);
+      const det = detectPlayers(ctx.getImageData(0, 0, w, h));
+      if (!det || det.points.length === 0) {
+        history.current = [];
+        setLiveInfo({ w, h, pitch: det?.pitch ?? { x0: 0, y0: 0, w, h }, points: [], stable: false, formation: null });
+        return;
+      }
+      history.current = [...history.current, det.points.length].slice(-4);
+      const n = det.points.length;
+      const stable =
+        history.current.length >= 3 && history.current.every((c) => c === n) && n >= 7;
+      const formation =
+        n === 11
+          ? guessFormation("A", toField(det.points, { vertical: det.pitch.h > det.pitch.w, flip: false }).map((p) => ({ x: p.x * 0.5, y: p.y })))
+          : null;
+      setLiveInfo({ w, h, pitch: det.pitch, points: det.points, stable, formation });
+    };
+
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
+      .then((s) => {
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        stream = s;
+        const video = videoRef.current;
+        if (video) {
+          video.srcObject = s;
+          void video.play();
+        }
+        timer = setInterval(tick, LIVE_EVERY_MS);
+      })
+      .catch(() => {
+        setError("Não consegui abrir a câmera. Permita o acesso à câmera no navegador ou envie um print.");
+        setLive(false);
+      });
+
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+      stream?.getTracks().forEach((t) => t.stop());
+    };
+  }, [live]);
+
+  function captureFrame() {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0) return;
+    const scale = Math.min(1, MAX_SIDE / Math.max(video.videoWidth, video.videoHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        setLive(false);
+        setLiveInfo(null);
+        void onFile(new File([blob], "quadro.png", { type: "image/png" }));
+      },
+      "image/png"
+    );
+  }
 
   async function onFile(file: File | undefined) {
     if (!file) return;
@@ -140,10 +239,87 @@ export function PhotoImportPage() {
           }}
         />
       </label>
+      {!live && (
+        <button
+          type="button"
+          className={styles.secondary}
+          style={{ alignSelf: "flex-start" }}
+          onClick={() => {
+            setError(null);
+            setLive(true);
+          }}
+        >
+          Escanear ao vivo com a câmera
+        </button>
+      )}
       {error && (
         <p role="alert" className={styles.error}>
           {error}
         </p>
+      )}
+
+      {live && (
+        <section className={styles.live} aria-label="Câmera ao vivo">
+          <div
+            className={styles.frame}
+            style={{
+              aspectRatio: liveInfo ? `${liveInfo.w} / ${liveInfo.h}` : "3 / 4",
+              ["--ar" as string]: liveInfo ? liveInfo.w / liveInfo.h : 0.75,
+            }}
+          >
+            <video ref={videoRef} playsInline muted autoPlay />
+            {liveInfo && (
+              <svg viewBox={`0 0 ${liveInfo.w} ${liveInfo.h}`} role="presentation" style={{ pointerEvents: "none" }}>
+                <rect
+                  x={liveInfo.pitch.x0}
+                  y={liveInfo.pitch.y0}
+                  width={liveInfo.pitch.w}
+                  height={liveInfo.pitch.h}
+                  fill="none"
+                  stroke={liveInfo.stable ? "#3ddc84" : "#f2b705"}
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                />
+                {liveInfo.points.map((p, i) => (
+                  <circle
+                    key={i}
+                    cx={liveInfo.pitch.x0 + p.x * liveInfo.pitch.w}
+                    cy={liveInfo.pitch.y0 + p.y * liveInfo.pitch.h}
+                    r={Math.max(8, liveInfo.w * 0.03)}
+                    fill="rgba(0,229,255,0.18)"
+                    stroke="#00e5ff"
+                    strokeWidth={3}
+                  />
+                ))}
+              </svg>
+            )}
+          </div>
+          <p role="status" className={styles.summary}>
+            {!liveInfo || liveInfo.points.length === 0
+              ? "Aponte para o campo da escalação, com o campo inteiro na tela."
+              : `${liveInfo.points.length} jogadores${liveInfo.formation ? ` · ${liveInfo.formation} provável` : ""}${liveInfo.stable ? " · imagem estável" : " · segure firme"}`}
+          </p>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={liveInfo?.stable ? styles.primary : styles.secondary}
+              onClick={captureFrame}
+              disabled={!liveInfo || liveInfo.points.length === 0}
+            >
+              Usar este quadro
+            </button>
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => {
+                setLive(false);
+                setLiveInfo(null);
+              }}
+            >
+              Fechar câmera
+            </button>
+          </div>
+        </section>
       )}
 
       {loaded && (
