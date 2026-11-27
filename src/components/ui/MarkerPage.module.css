@@ -1,80 +1,41 @@
-.page {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem 1.25rem 1.5rem;
-  gap: 1rem;
-}
-
-.bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-}
-
-.link {
-  color: var(--chalk-300);
-  font-size: 0.9rem;
-  text-decoration: none;
-}
-
-.link:hover {
-  text-decoration: underline;
-}
-
-.print {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--pitch-950);
-  background: var(--signal-amber);
-  padding: 0.55rem 1.1rem;
-}
-
-.sheet {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  padding: 1rem;
-  min-height: 0;
-}
-
-.marker {
-  max-width: 100%;
-  max-height: 72dvh;
-  object-fit: contain;
-}
-
-.help {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--chalk-300);
-  max-width: 44rem;
-}
+.page { min-height: 100dvh; display: flex; flex-direction: column; padding: 1rem 1.25rem 2rem; gap: 1.25rem; max-width: 72rem; margin: 0 auto; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.link { color: var(--chalk-300); font-size: 0.9rem; text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.print, .secondary { font-weight: 600; font-size: 0.9rem; padding: 0.55rem 1.1rem; }
+.print { color: var(--pitch-950); background: var(--signal-amber); }
+.print:disabled { opacity: 0.6; cursor: progress; }
+.secondary { background: transparent; color: var(--chalk-050); border: 1px solid var(--line-020); }
+.print:focus-visible, .secondary:focus-visible { outline: 2px solid var(--signal-amber); outline-offset: 2px; }
+.layout { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: start; }
+@media (min-width: 52rem) { .layout { grid-template-columns: minmax(0, 28rem) minmax(0, 1fr); } }
+.card { background: var(--pitch-950); border: 1px solid var(--line-020); padding: 1.1rem; display: flex; flex-direction: column; gap: 1rem; }
+.cardHead { display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.85rem; color: var(--chalk-300); }
+.brand { font-family: var(--font-display); font-size: 1.9rem; color: var(--chalk-050); letter-spacing: 0.03em; }
+.sheet { display: flex; align-items: center; justify-content: center; background: #fff; padding: 0.7rem; }
+.marker { width: 100%; max-height: 60dvh; object-fit: contain; }
+.cardFoot { display: flex; gap: 1rem; align-items: center; }
+.qr { width: 6.5rem; height: 6.5rem; background: #fff; flex: none; }
+.step { color: var(--signal-amber); font-size: 0.95rem; }
+.steps { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--chalk-300); display: flex; flex-direction: column; gap: 0.15rem; }
+.owner { display: flex; flex-direction: column; border-top: 1px solid var(--line-020); padding-top: 0.7rem; }
+.owner strong { font-family: var(--font-display); font-size: 1.5rem; }
+.owner span { font-size: 0.85rem; color: var(--chalk-300); }
+.side { display: flex; flex-direction: column; gap: 0.9rem; max-width: 28rem; }
+.h1 { font-family: var(--font-display); font-size: 2rem; margin: 0; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--chalk-300); }
+.field input { font: inherit; color: var(--chalk-050); background: var(--pitch-850); border: 1px solid var(--line-020); padding: 0.5rem 0.6rem; }
+.field input:focus-visible { outline: 2px solid var(--signal-amber); outline-offset: 1px; }
+.help { margin: 0; font-size: 0.85rem; color: var(--chalk-300); }
+.msg { margin: 0; font-size: 0.85rem; color: var(--signal-amber); }
 
 @media print {
-  .bar,
-  .help {
-    display: none;
-  }
-
-  .page {
-    padding: 0;
-  }
-
-  .sheet {
-    padding: 0;
-  }
-
-  .marker {
-    max-height: 100vh;
-  }
+  @page { size: A4; margin: 8mm; }
+  body { background: #fff; }
+  .bar, .side { display: none; }
+  .page { padding: 0; max-width: none; }
+  .layout { display: block; }
+  .card { border: none; width: 100%; max-width: none; }
+  .marker { max-height: 150mm; }
 }

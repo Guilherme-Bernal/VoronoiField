@@ -1,0 +1,84 @@
+.wrap {
+  margin: 0.5rem 0 0.25rem;
+}
+
+.board {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--pitch-850);
+  border: 1px solid var(--line-020);
+  touch-action: none;
+  user-select: none;
+}
+
+.pitch {
+  fill: none;
+  stroke: var(--line-020);
+  stroke-width: 0.6;
+}
+
+.mid {
+  stroke: var(--line-020);
+  stroke-width: 0.4;
+}
+
+.zoneA {
+  fill: rgba(47, 111, 237, 0.34);
+  stroke: rgba(244, 247, 243, 0.22);
+  stroke-width: 0.25;
+}
+
+.zoneB {
+  fill: rgba(224, 72, 62, 0.34);
+  stroke: rgba(244, 247, 243, 0.22);
+  stroke-width: 0.25;
+}
+
+.tokenA {
+  fill: var(--team-a);
+  stroke: var(--chalk-050);
+  stroke-width: 0.6;
+}
+
+.tokenB {
+  fill: var(--team-b);
+  stroke: var(--chalk-050);
+  stroke-width: 0.6;
+}
+
+.movable {
+  cursor: grab;
+}
+
+.movable:active {
+  cursor: grabbing;
+}
+
+.movable:focus {
+  outline: none;
+}
+
+.ring {
+  fill: none;
+  stroke: var(--signal-amber);
+  stroke-width: 0.9;
+}
+
+.movable:focus-visible .ring {
+  stroke-width: 1.6;
+}
+
+.readout {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--chalk-050);
+}
+
+.up {
+  color: #6fdc8c;
+}
+
+.down {
+  color: #ff8f86;
+}

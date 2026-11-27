@@ -13,6 +13,7 @@ import { ScenarioPicker } from "../ui/ScenarioPicker";
 import { FormationPicker } from "./FormationPicker";
 import { prefetchAR } from "../../lib/prefetch";
 import { useTacticalStore } from "../../state/tacticalStore";
+import { GuidedTour } from "../tour/GuidedTour";
 import styles from "./SimulatorPage.module.css";
 
 const PITCH_W = 105;
@@ -139,6 +140,7 @@ export function SimulatorPage() {
 
   return (
     <main className={styles.page}>
+      <GuidedTour context="sim" />
       <header className={styles.header}>
         <Link to="/" className={styles.back}>
           ← Início
@@ -169,7 +171,7 @@ export function SimulatorPage() {
       </header>
 
       <div className={styles.layout}>
-        <div className={styles.boardWrap}>
+        <div className={styles.boardWrap} data-tour="board">
           {view === "3d" ? (
             <Stadium3D />
           ) : (
@@ -322,7 +324,7 @@ export function SimulatorPage() {
         </div>
 
         <aside className={styles.panel}>
-          <section className={styles.block}>
+          <section className={styles.block} data-tour="control">
             <h2 className={styles.blockTitle}>Domínio do campo</h2>
             <div
               className={styles.meter}
@@ -342,11 +344,11 @@ export function SimulatorPage() {
             </p>
           </section>
 
-          <section className={styles.block}>
+          <section className={styles.block} data-tour="result">
             <ResultPanel defaultOpen />
           </section>
 
-          <section className={styles.block}>
+          <section className={styles.block} data-tour="scenarios">
             <ScenarioPicker defaultOpen />
           </section>
 
@@ -370,7 +372,7 @@ export function SimulatorPage() {
             />
           </section>
 
-          <section className={styles.block}>
+          <section className={styles.block} data-tour="layers">
             <h2 className={styles.blockTitle}>Camadas</h2>
             <div className={styles.buttons}>
               <button

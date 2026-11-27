@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import styles from "./ARHint.module.css";
 
 const KEY = "voronoifield.arHintSeen";
@@ -14,7 +14,9 @@ function alreadySeen(): boolean {
 
 /** Instruções curtas na primeira vez que o AR abre. */
 export function ARHint() {
-  const [open, setOpen] = useState(() => !alreadySeen());
+  const [params] = useSearchParams();
+  // Quem chega pelo guia (?tour=1) já recebe as instruções lá.
+  const [open, setOpen] = useState(() => !alreadySeen() && params.get("tour") !== "1");
   if (!open) return null;
 
   const close = () => {

@@ -36,6 +36,12 @@ export function HomeScreen() {
           >
             Ver em realidade aumentada
           </Link>
+          <Link to="/leitura" className={styles.ctaGhost}>
+            Leitura de campo
+          </Link>
+          <Link to="/sim?tour=1" className={styles.ctaGhost}>
+            Como usar (2 min)
+          </Link>
         </div>
 
         <ol className={styles.steps}>

@@ -1,8 +1,9 @@
-﻿import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { HomeScreen } from "./components/ui/HomeScreen";
 import { MarkerPage } from "./components/ui/MarkerPage";
 import { NotFound } from "./components/ui/NotFound";
+import { MatchReportPage } from "./match/MatchReportPage";
 
 const ARExperience = lazy(() =>
   import("./components/ar/ARExperience").then((m) => ({ default: m.ARExperience }))
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" element={<HomeScreen />} />
           <Route path="/ar" element={<ARExperience />} />
           <Route path="/sim" element={<SimulatorPage />} />
+          <Route path="/leitura" element={<MatchReportPage />} />
           <Route path="/marcador" element={<MarkerPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

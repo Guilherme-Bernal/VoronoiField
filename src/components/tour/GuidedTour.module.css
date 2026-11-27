@@ -1,0 +1,220 @@
+.launcher {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--chalk-050);
+  background: transparent;
+  border: 1px solid var(--line-020);
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+}
+
+.launcher:hover {
+  border-color: rgba(244, 247, 243, 0.4);
+}
+
+.launcher:focus-visible {
+  outline: 2px solid var(--signal-amber);
+  outline-offset: 2px;
+}
+
+.launcherOverlay {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--chalk-050);
+  background: rgba(8, 25, 18, 0.82);
+  border: 1px solid var(--line-020);
+  padding: 0.5rem 0.75rem;
+  width: max-content;
+  cursor: pointer;
+}
+
+.launcherOverlay:focus-visible {
+  outline: 2px solid var(--signal-amber);
+  outline-offset: 2px;
+}
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
+.blocker {
+  position: fixed;
+  inset: 0;
+}
+
+.dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 10, 7, 0.72);
+}
+
+/* O buraco iluminado: a sombra enorme escurece o resto da tela. */
+.spot {
+  position: fixed;
+  border: 2px solid var(--signal-amber);
+  box-shadow: 0 0 0 100vmax rgba(3, 10, 7, 0.72);
+  pointer-events: none;
+  transition:
+    top 0.25s ease,
+    left 0.25s ease,
+    width 0.25s ease,
+    height 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spot {
+    transition: none;
+  }
+}
+
+.card {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  width: min(26rem, calc(100vw - 1.5rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.1rem 1.1rem 1rem;
+  background: rgba(8, 25, 18, 0.98);
+  border: 1px solid var(--line-020);
+  color: var(--chalk-050);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.cardTop {
+  bottom: auto;
+  top: 1rem;
+}
+
+.card:focus {
+  outline: none;
+}
+
+.closeButton {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.5rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--chalk-300);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  color: var(--chalk-050);
+}
+
+.closeButton:focus-visible,
+.primary:focus-visible,
+.secondary:focus-visible,
+.link:focus-visible,
+.survey:focus-visible {
+  outline: 2px solid var(--signal-amber);
+  outline-offset: 2px;
+}
+
+.counter {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  color: var(--chalk-300);
+}
+
+.title {
+  margin: 0 2rem 0.5rem 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.text {
+  margin: 0 0 0.5rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.points {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--chalk-300);
+}
+
+.link {
+  display: inline-block;
+  margin: 0.25rem 0 0.5rem;
+  color: var(--signal-amber);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.survey {
+  display: inline-block;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.55rem 0.9rem;
+  color: #1a1400;
+  background: var(--signal-amber);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.dots {
+  display: flex;
+  gap: 0.3rem;
+  margin: 0.6rem 0 0.8rem;
+}
+
+.dot,
+.dotActive {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--line-020);
+}
+
+.dotActive {
+  background: var(--signal-amber);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.primary,
+.secondary {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  min-height: 2.5rem;
+}
+
+.primary {
+  color: #1a1400;
+  background: var(--signal-amber);
+  border: 1px solid var(--signal-amber);
+}
+
+.secondary {
+  color: var(--chalk-050);
+  background: transparent;
+  border: 1px solid var(--line-020);
+}
+
+.secondary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

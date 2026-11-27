@@ -1,3 +1,4 @@
+import { GuidedTour } from "../tour/GuidedTour";
 import { Legend } from "./Legend";
 import { ModePicker } from "./ModePicker";
 import { ResultPanel } from "./ResultPanel";
@@ -7,7 +8,8 @@ import styles from "./ARPanels.module.css";
 /** Pilha de painéis do AR: cenários, resultado e legenda (abre um de cada vez). */
 export function ARPanels() {
   return (
-    <div className={styles.stack}>
+    <div className={styles.stack} data-tour="ar-panels">
+      <GuidedTour context="ar" variant="overlay" />
       <ModePicker variant="overlay" group="ar-panel" />
       <ScenarioPicker variant="overlay" group="ar-panel" />
       <ResultPanel variant="overlay" group="ar-panel" />
